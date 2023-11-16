@@ -3,9 +3,11 @@
     public class Product : BaseEntity
     {
         public int ProductTypeID { get; set; }
-        public string? NameProduct { get; set; }
+        public int SubCategoriesID { get; set; }
+        public string? Name { get; set; }
+        public string? Slug { get; set; }
         public double Price { get; set; }
-        public string? AvatarImageProduct { get; set; }
+        public string? Image { get; set; }
         public string? Title { get; set; }
         public int? Discount { get; set; }
         public int Status { get; set; }
@@ -18,6 +20,7 @@
         public DateTime? UpdatedAt { get; set; }
 
         public ProductType? ProductType { get; set; }
+        public SubCategories? SubCategories { get; set; }
         public List<ProductImage>? ListProductImage { get; set; }
         public List<ProductReview>? ListProductReview { get; set; }
         public List<CartItem>? ListCartItem { get; set; }

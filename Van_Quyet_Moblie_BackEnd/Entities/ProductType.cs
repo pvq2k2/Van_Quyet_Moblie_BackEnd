@@ -2,8 +2,9 @@
 {
     public class ProductType : BaseEntity
     {
-        public string? NameProductType { get; set; }
-        public string? ImageTypeProduct { get; set; }
+        public string? Color { get; set; }
+        public string? Size { get; set; }
+        public int Quantity { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
