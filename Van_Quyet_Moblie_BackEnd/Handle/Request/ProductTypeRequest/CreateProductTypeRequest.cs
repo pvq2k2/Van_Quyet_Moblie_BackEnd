@@ -2,7 +2,8 @@
 {
     public class CreateProductTypeRequest
     {
-        public string? NameProductType { get; set; }
-        public IFormFile? ImageTypeProduct { get; set; }
+        public string? Color { get; set; }
+        public string? Size { get; set; }
+        public int Quantity { get; set; }
     }
 }

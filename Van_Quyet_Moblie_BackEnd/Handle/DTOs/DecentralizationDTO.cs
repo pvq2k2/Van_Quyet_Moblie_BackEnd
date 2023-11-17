@@ -3,6 +3,6 @@
     public class DecentralizationDTO
     {
         public int DecentralizationID { get; set; }
-        public string? AuthorityName { get; set; }
+        public string? Name { get; set; }
     }
 }

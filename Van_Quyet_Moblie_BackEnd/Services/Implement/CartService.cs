@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
+using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.CartRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
@@ -8,13 +10,17 @@ using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
-    public class CartService : BaseService, ICartService
+    public class CartService : ICartService
     {
+        private readonly CartConverter _cartConverter;
+        private readonly AppDbContext _dbContext;
         private readonly ResponseObject<CartDTO> _response;
         private readonly TokenHelper _tokenHelper;
 
-        public CartService(ResponseObject<CartDTO> response, TokenHelper tokenHelper)
+        public CartService(AppDbContext dbContext, ResponseObject<CartDTO> response, TokenHelper tokenHelper)
         {
+            _cartConverter = new CartConverter();
+            _dbContext = dbContext;
             _response = response;
             _tokenHelper = tokenHelper;
         }
@@ -25,16 +31,16 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 _tokenHelper.IsToken();
                 var userID = _tokenHelper.GetUserID();
 
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Người dùng không tồn tại !", null!);
                 }
-                if (!await _context.Product.AnyAsync(x => x.ID == request.ProductID))
+                if (!await _dbContext.Product.AnyAsync(x => x.ID == request.ProductID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);
                 }
-                var cart = await _context.Cart.FirstOrDefaultAsync(x => x.ID == userID);
-                using var tran = _context.Database.BeginTransaction();
+                var cart = await _dbContext.Cart.FirstOrDefaultAsync(x => x.ID == userID);
+                using var tran = _dbContext.Database.BeginTransaction();
                 try
                 {
                     if (cart == null)
@@ -43,11 +49,11 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                         {
                             UserID = userID,
                         };
-                        await _context.Cart.AddAsync(cart);
-                        await _context.SaveChangesAsync();
+                        await _dbContext.Cart.AddAsync(cart);
+                        await _dbContext.SaveChangesAsync();
                     }
 
-                    var cartItem = await _context.CartItem.FirstOrDefaultAsync(x => x.CartID == cart.ID && x.ProductID == request.ProductID);
+                    var cartItem = await _dbContext.CartItem.FirstOrDefaultAsync(x => x.CartID == cart.ID && x.ProductID == request.ProductID);
                     if (cartItem == null)
                     {
                         cartItem = new CartItem
@@ -56,18 +62,18 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                             ProductID = request.ProductID,
                             Quantity = request.Quantity
                         };
-                        await _context.CartItem.AddAsync(cartItem);
-                        await _context.SaveChangesAsync();
+                        await _dbContext.CartItem.AddAsync(cartItem);
+                        await _dbContext.SaveChangesAsync();
                     } else
                     {
                         cartItem.Quantity += request.Quantity;
                     }
 
-                    _context.CartItem.Update(cartItem);
-                    await _context.SaveChangesAsync();
+                    _dbContext.CartItem.Update(cartItem);
+                    await _dbContext.SaveChangesAsync();
 
                     await tran.CommitAsync();
-                    var responseCart = await _context.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.ID == cart.ID);
+                    var responseCart = await _dbContext.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.ID == cart.ID);
                     return _response.ResponseSuccess("Thêm vào giỏ hàng thành công !", _cartConverter.EntityCartToDTO(responseCart!));
                 }
                 catch (Exception ex)
@@ -90,11 +96,11 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 _tokenHelper.IsToken();
                 var userID = _tokenHelper.GetUserID();
 
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Người dùng không tồn tại !", null!);
                 }
-                var cart = await _context.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.UserID == userID);
+                var cart = await _dbContext.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.UserID == userID);
                 if (cart == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Không có sản phẩm nào !", null!);
@@ -119,20 +125,20 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 {
                     return _response.ResponseError(StatusCodes.Status400BadRequest, "Số lượng không được nhỏ hơn 1 !", null!);
                 }
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Người dùng không tồn tại !", null!);
                 }
-                if (!await _context.Product.AnyAsync(x => x.ID == request.ProductID))
+                if (!await _dbContext.Product.AnyAsync(x => x.ID == request.ProductID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);
                 }
-                var cart = await _context.Cart.FirstOrDefaultAsync(x => x.ID == userID);
+                var cart = await _dbContext.Cart.FirstOrDefaultAsync(x => x.ID == userID);
                 if (cart == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Giỏ hàng không tồn tại !", null!);
                 }
-                var cartItem = await _context.CartItem.FirstOrDefaultAsync(x => x.CartID == cart.ID && x.ProductID == request.ProductID);
+                var cartItem = await _dbContext.CartItem.FirstOrDefaultAsync(x => x.CartID == cart.ID && x.ProductID == request.ProductID);
                 if (cartItem == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại trong giỏ hàng !", null!);
@@ -141,12 +147,12 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 cart.UpdatedAt = DateTime.Now;
                 cartItem.Quantity = request.Quantity;
                 cartItem.UpdatedAt = DateTime.Now;
-                _context.Cart.Update(cart);
-                await _context.SaveChangesAsync();
-                _context.CartItem.Update(cartItem);
-                await _context.SaveChangesAsync();
+                _dbContext.Cart.Update(cart);
+                await _dbContext.SaveChangesAsync();
+                _dbContext.CartItem.Update(cartItem);
+                await _dbContext.SaveChangesAsync();
 
-                var responseCart = await _context.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.ID == cart.ID);
+                var responseCart = await _dbContext.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.ID == cart.ID);
                 return _response.ResponseSuccess("Thành công !", _cartConverter.EntityCartToDTO(responseCart!));
             }
             catch (Exception ex)
@@ -162,17 +168,17 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 _tokenHelper.IsToken();
                 var userID = _tokenHelper.GetUserID();
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return response.ResponseError(StatusCodes.Status404NotFound, "Người dùng không tồn tại !", null!);
                 }
-                var cartItem = await _context.CartItem.FirstOrDefaultAsync(x => x.ID == cartItemID);
+                var cartItem = await _dbContext.CartItem.FirstOrDefaultAsync(x => x.ID == cartItemID);
                 if (cartItem == null)
                 {
                     return response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm trong giỏ hàng không tồn tại !", null!);
                 }
-                _context.CartItem.Remove(cartItem);
-                await _context.SaveChangesAsync();
+                _dbContext.CartItem.Remove(cartItem);
+                await _dbContext.SaveChangesAsync();
 
                 return response.ResponseSuccess("Xóa thành công !", null!);
             }

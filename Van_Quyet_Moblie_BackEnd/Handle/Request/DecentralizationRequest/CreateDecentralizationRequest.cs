@@ -2,6 +2,6 @@
 {
     public class CreateDecentralizationRequest
     {
-        public string? AuthorityName { get; set; }
+        public string? Name { get; set; }
     }
 }

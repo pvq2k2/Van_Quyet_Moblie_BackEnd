@@ -1,18 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Van_Quyet_Moblie_BackEnd.Entities;
-using Van_Quyet_Moblie_BackEnd.Helpers.DataContext;
 
-namespace Van_Quyet_Moblie_BackEnd.Helpers.DBContext
+namespace Van_Quyet_Moblie_BackEnd.DataContext
 {
     public class AppDbContext : DbContext
     {
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer(Settings.MyConnectString());
-        }
+        public AppDbContext(DbContextOptions<AppDbContext> options): base(options) { }
         public DbSet<Account> Account { get; set; }
         public DbSet<Cart> Cart { get; set; }
         public DbSet<CartItem> CartItem { get; set; }
+        public DbSet<Categories> Categories { get; set; }
         public DbSet<Decentralization> Decentralization { get; set; }
         public DbSet<Order> Order { get; set; }
         public DbSet<OrderDetail> OrderDetail { get; set; }
@@ -23,10 +20,11 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers.DBContext
         public DbSet<ProductReview> ProductReview { get; set; }
         public DbSet<ProductType> ProductType { get; set; }
         public DbSet<RefreshToken> RefreshToken { get; set; }
+        public DbSet<Slides> Slides { get; set; }
+        public DbSet<SubCategories> SubCategories { get; set; }
         public DbSet<User> User { get; set; }
         public DbSet<Voucher> Voucher { get; set; }
         public DbSet<UserVoucher> UserVoucher { get; set; }
-        public DbSet<Slides> Slides { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

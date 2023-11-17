@@ -10,8 +10,9 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
             return new ProductTypeDTO
             {
                 ProductTypeID = productType.ID,
-                NameProductType = productType.NameProductType,
-                ImageTypeProduct = productType.ImageTypeProduct
+                Color = productType.Color,
+                Size = productType.Size,
+                Quantity = productType.Quantity
             };
         }
 
