@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QuanLyTrungTam_API.Helper;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Enums;
+using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.OrderRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
@@ -10,14 +12,18 @@ using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
-    public class OrderService : BaseService, IOrderService
+    public class OrderService : IOrderService
     {
+        private readonly OrderConverter _orderConverter;
+        private readonly AppDbContext _dbContext;
         private readonly ResponseObject<OrderDTO> _response;
         private readonly TokenHelper _tokenHelper;
         private readonly GHNHelper _ghnHelper;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public OrderService(ResponseObject<OrderDTO> response, TokenHelper tokenHelper, GHNHelper ghnHelper, IHttpContextAccessor httpContextAccessor)
+        public OrderService(AppDbContext dbContext, ResponseObject<OrderDTO> response, TokenHelper tokenHelper, GHNHelper ghnHelper, IHttpContextAccessor httpContextAccessor)
         {
+            _orderConverter = new OrderConverter();
+            _dbContext = dbContext;
             _response = response;
             _tokenHelper = tokenHelper;
             _ghnHelper = ghnHelper;
@@ -29,14 +35,14 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             var response = new ResponseObject<string>();
             try
             {
-                var order = await _context.Order.Include(x => x.OrderStatus!).FirstOrDefaultAsync(x => x.ID == orderID);
+                var order = await _dbContext.Order.Include(x => x.OrderStatus!).FirstOrDefaultAsync(x => x.ID == orderID);
                 if (order == null)
                 {
                     return response.ResponseError(StatusCodes.Status404NotFound, "Đơn hàng không tồn tại !", null!);
                 }
                 order.OrderStatus!.ID = (int)StatusOrder.cancel;
-                _context.Order.Update(order);
-                await _context.SaveChangesAsync();
+                _dbContext.Order.Update(order);
+                await _dbContext.SaveChangesAsync();
                 return response.ResponseError(StatusCodes.Status200OK, "Hủy đơn hàng thành công !", null!);
             }
             catch (Exception e)
@@ -52,16 +58,16 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 InputHelper.CheckOutValidate(request);
                 _tokenHelper.IsToken();
                 var userID = _tokenHelper.GetUserID();
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return _response.ResponseError(StatusCodes.Status400BadRequest, "Người dùng không tồn tại !", null!);
                 }
-                if (!await _context.Payment.AnyAsync(x => x.ID == request.PaymentID))
+                if (!await _dbContext.Payment.AnyAsync(x => x.ID == request.PaymentID))
                 {
                     return _response.ResponseError(StatusCodes.Status400BadRequest, "Phương thức thanh toán không tồn tại !", null!);
                 }
 
-                var cart = await _context.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.UserID == userID);
+                var cart = await _dbContext.Cart.Include(x => x.ListCartItem!).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.UserID == userID);
                
                 if (cart == null)
                 {
@@ -70,7 +76,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
                 var listCartItem = cart.ListCartItem;
 
-                using var tran = _context.Database.BeginTransaction();
+                using var tran = _dbContext.Database.BeginTransaction();
                 try
                 {
                     double totalPrice = 0;
@@ -105,8 +111,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                         OrderStatusID = (int)StatusOrder.ready_to_pick,
                     };
 
-                    await _context.Order.AddAsync(order);
-                    await _context.SaveChangesAsync();
+                    await _dbContext.Order.AddAsync(order);
+                    await _dbContext.SaveChangesAsync();
 
                     var listOrderDetail = new List<OrderDetail>();
                     foreach (var item in listCartItem!)
@@ -121,15 +127,15 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                         listOrderDetail.Add(orderDetail);
                     }
 
-                    await _context.OrderDetail.AddRangeAsync(listOrderDetail);
-                    await _context.SaveChangesAsync();
+                    await _dbContext.OrderDetail.AddRangeAsync(listOrderDetail);
+                    await _dbContext.SaveChangesAsync();
 
-                    _context.CartItem.RemoveRange(listCartItem);
-                    await _context.SaveChangesAsync();
+                    _dbContext.CartItem.RemoveRange(listCartItem);
+                    await _dbContext.SaveChangesAsync();
 
                     await tran.CommitAsync();
 
-                    var responseOrder = await _context.Order
+                    var responseOrder = await _dbContext.Order
                         .Include(x => x.Payment!)
                         .Include(x => x.OrderStatus!)
                         .Include(x => x.ListOrderDetail!)
@@ -153,7 +159,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         public async Task<PageResult<OrderDTO>> GetAllOrder(Pagination pagination)
         {
 
-            var query = _context.Order.Include(x => x.Payment!)
+            var query = _dbContext.Order.Include(x => x.Payment!)
                         .Include(x => x.OrderStatus!)
                         .Include(x => x.ListOrderDetail!)
                         .ThenInclude(x => x.Product).OrderByDescending(x => x.ID).AsQueryable();
@@ -172,7 +178,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 _tokenHelper.IsToken();
                 int userID = _tokenHelper.GetUserID();
-                var query = _context.Order.Where(x => x.ID == userID).Include(x => x.Payment!)
+                var query = _dbContext.Order.Where(x => x.ID == userID).Include(x => x.Payment!)
                             .Include(x => x.OrderStatus!)
                             .Include(x => x.ListOrderDetail!)
                             .ThenInclude(x => x.Product).OrderByDescending(x => x.ID).AsQueryable();
@@ -194,7 +200,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             try
             {
-                var order = await _context.Order
+                var order = await _dbContext.Order
                     .Include(x => x.Payment!)
                     .Include(x => x.OrderStatus!)
                     .Include(x => x.ListOrderDetail!)
@@ -219,7 +225,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             try
             {
                 InputHelper.UpdateOrderValidate(request);
-                var order = await _context.Order.Include(x => x.OrderStatus).FirstOrDefaultAsync(x => x.ID == orderID);
+                var order = await _dbContext.Order.Include(x => x.OrderStatus).FirstOrDefaultAsync(x => x.ID == orderID);
                 if (order == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Đơn hàng không tồn tại !", null!);
@@ -233,10 +239,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 order.Phone = request.Phone;
                 order.Address = request.Address;
 
-                _context.Order.Update(order);
-                await _context.SaveChangesAsync();
+                _dbContext.Order.Update(order);
+                await _dbContext.SaveChangesAsync();
 
-                var responseOrder = await _context.Order
+                var responseOrder = await _dbContext.Order
                         .Include(x => x.Payment!)
                         .Include(x => x.OrderStatus!)
                         .Include(x => x.ListOrderDetail!)
@@ -255,7 +261,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             try
             {
-                var order = await _context.Order.Include(x => x.OrderStatus).FirstOrDefaultAsync(x => x.ID == orderID);
+                var order = await _dbContext.Order.Include(x => x.OrderStatus).FirstOrDefaultAsync(x => x.ID == orderID);
                 if (order == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Đơn hàng không tồn tại !", null!);
@@ -266,10 +272,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 }
                 order.OrderStatus.ID = orderStatusID;
 
-                _context.Order.Update(order);
-                await _context.SaveChangesAsync();
+                _dbContext.Order.Update(order);
+                await _dbContext.SaveChangesAsync();
 
-                var responseOrder = await _context.Order
+                var responseOrder = await _dbContext.Order
                         .Include(x => x.Payment!)
                         .Include(x => x.OrderStatus!)
                         .Include(x => x.ListOrderDetail!)

@@ -1,43 +1,52 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QuanLyTrungTam_API.Helper;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
+using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductTypeRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
-using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
-    public class ProductTypeService : BaseService, IProductTypeService
+    public class ProductTypeService : IProductTypeService
     {
+        private readonly ProductTypeConverter _productTypeConverter;
+        private readonly AppDbContext _dbContext;
         private readonly ResponseObject<ProductTypeDTO> _response;
-        private readonly CloudinaryHelper _cloundinaryHelper;
-        public ProductTypeService(ResponseObject<ProductTypeDTO> response, CloudinaryHelper cloudinaryHelper)
+        public ProductTypeService(AppDbContext dbContext, ResponseObject<ProductTypeDTO> response)
         {
+            _productTypeConverter = new ProductTypeConverter();
+            _dbContext = dbContext;
             _response = response;
-            _cloundinaryHelper = cloudinaryHelper;
         }
         public async Task<ResponseObject<ProductTypeDTO>> CreateProductType(CreateProductTypeRequest request)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(request.NameProductType))
+                if (string.IsNullOrWhiteSpace(request.Color))
                 {
-                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập tên danh mục !", null!);
+                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập màu sắc !", null!);
                 }
-                InputHelper.IsImage(request.ImageTypeProduct!);
-
-                string image = await _cloundinaryHelper.UploadImage(request.ImageTypeProduct!, "van-quyet-mobile/productType", "product-type");
-                var productType = new ProductType { 
-                    NameProductType = request.NameProductType,
-                    ImageTypeProduct = image
+                if (string.IsNullOrWhiteSpace(request.Size))
+                {
+                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập kích cỡ !", null!);
+                }
+                if (request.Quantity < 0)
+                {
+                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập số lượng lớn hơn 0 !", null!);
+                }
+                var productType = new ProductType {
+                    Color = request.Color,
+                    Size = request.Size,
+                    Quantity = request.Quantity
                 };
 
-                await _context.ProductType.AddAsync(productType);
-                await _context.SaveChangesAsync();
+                await _dbContext.ProductType.AddAsync(productType);
+                await _dbContext.SaveChangesAsync();
 
-                return _response.ResponseSuccess("Thêm danh mục thành công !", _productTypeConverter.EntityProductTypeToDTO(productType));
+                return _response.ResponseSuccess("Thêm loại sản phẩm thành công !", _productTypeConverter.EntityProductTypeToDTO(productType));
             }
             catch (Exception e)
             {
@@ -47,7 +56,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<PageResult<ProductTypeDTO>> GetAllProductType(Pagination pagination)
         {
-            var query = _context.ProductType.OrderByDescending(x => x.ID).AsQueryable();
+            var query = _dbContext.ProductType.OrderByDescending(x => x.ID).AsQueryable();
 
             var result = PageResult<ProductType>.ToPageResult(pagination, query);
             pagination.TotalCount = await query.CountAsync();
@@ -59,10 +68,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<ProductTypeDTO>> GetProductTypeByID(int productTypeID)
         {
-            var productType = await _context.ProductType.FirstOrDefaultAsync(x => x.ID == productTypeID);
+            var productType = await _dbContext.ProductType.FirstOrDefaultAsync(x => x.ID == productTypeID);
             if (productType == null)
             {
-                return _response.ResponseError(StatusCodes.Status400BadRequest, "Danh mục không tồn tại !", null!);
+                return _response.ResponseError(StatusCodes.Status400BadRequest, "Loại sản phẩm không tồn tại !", null!);
             }
 
             return _response.ResponseSuccess("Thành công !", _productTypeConverter.EntityProductTypeToDTO(productType));
@@ -71,51 +80,50 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         public async Task<ResponseObject<string>> RemoveProductType(int productTypeID)
         {
             var response = new ResponseObject<string>();
-            var productType = await _context.ProductType.FirstOrDefaultAsync(x => x.ID == productTypeID);
+            var productType = await _dbContext.ProductType.FirstOrDefaultAsync(x => x.ID == productTypeID);
             if (productType == null)
             {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Danh mục không tồn tại !", null!);
+                return response.ResponseError(StatusCodes.Status400BadRequest, "Loại sản phẩm không tồn tại !", null!);
             }
 
-            _context.ProductType.Remove(productType);
-            await _context.SaveChangesAsync();
+            _dbContext.ProductType.Remove(productType);
+            await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccess("Xóa danh mục thành công !", null!);
+            return response.ResponseSuccess("Xóa loại sản phẩm thành công !", null!);
         }
 
         public async Task<ResponseObject<ProductTypeDTO>> UpdateProductType(int productTypeID, UpdateProductTypeRequest request)
         {
             try
             {
-                var productType = await _context.ProductType.FirstOrDefaultAsync(x => x.ID == productTypeID);
+                var productType = await _dbContext.ProductType.FirstOrDefaultAsync(x => x.ID == productTypeID);
                 if (productType == null)
                 {
-                    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
+                    return _response.ResponseError(StatusCodes.Status404NotFound, "Loại sản phẩm không tồn tại !", null!);
                 }
 
-                if (string.IsNullOrEmpty(request.NameProductType))
+                if (string.IsNullOrWhiteSpace(request.Color))
                 {
-                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Tên danh mục không được để trống !", null!);
+                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập màu sắc !", null!);
                 }
-                string img;
-                if (request.ImageTypeProduct == null || request.ImageTypeProduct.Length == 0)
+                if (string.IsNullOrWhiteSpace(request.Size))
                 {
-                    img = productType.ImageTypeProduct!;
-                } else
+                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập kích cỡ !", null!);
+                }
+                if (request.Quantity < 0)
                 {
-                    InputHelper.IsImage(request.ImageTypeProduct!);
-                    img = await _cloundinaryHelper.UploadImage(request.ImageTypeProduct, "van-quyet-mobile/productType", "product-type");
-                    await _cloundinaryHelper.DeleteImageByUrl(productType.ImageTypeProduct!);
+                    return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập số lượng lớn hơn 0 !", null!);
                 }
 
-                productType.NameProductType = request.NameProductType;
-                productType.ImageTypeProduct = img;
+                productType.Color = request.Color;
+                productType.Size = request.Size;
+                productType.Quantity = request.Quantity;
                 productType.UpdatedAt = DateTime.Now;
 
-                _context.ProductType.Update(productType);
-                await _context.SaveChangesAsync();
+                _dbContext.ProductType.Update(productType);
+                await _dbContext.SaveChangesAsync();
 
-                return _response.ResponseSuccess("Cập nhật danh mục thành công !", _productTypeConverter.EntityProductTypeToDTO(productType));
+                return _response.ResponseSuccess("Cập nhật loại sản phẩm thành công !", _productTypeConverter.EntityProductTypeToDTO(productType));
             }
             catch (Exception e)
             {

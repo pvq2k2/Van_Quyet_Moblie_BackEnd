@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using System.Text.Json.Serialization;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
@@ -42,10 +44,10 @@ builder.Services.AddCors(options =>
                           policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                       });
 });
-//builder.Services.AddDbContext<AppDbContext>(options =>
-//{
-//    options.UseSqlServer(builder.Configuration.GetSection("AppSettings:MyDB").Value);
-//});
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetSection("AppSettings:MyDB").Value);
+});
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

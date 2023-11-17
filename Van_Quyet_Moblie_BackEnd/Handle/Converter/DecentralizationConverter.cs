@@ -9,7 +9,7 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
         {
             return new DecentralizationDTO { 
                 DecentralizationID = decentralization.ID,
-                AuthorityName = decentralization.AuthorityName,
+                Name = decentralization.Name,
             };
         }
 

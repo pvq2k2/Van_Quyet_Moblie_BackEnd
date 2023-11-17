@@ -10,9 +10,9 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
             return new ProductDTO
             {
                 ProductID = product.ID,
-                NameProduct = product.NameProduct,
+                Name = product.Name,
                 Price = product.Price,
-                AvatarImageProduct = product.AvatarImageProduct,
+                Image = product.Image,
                 Title = product.Title,
                 Discount = product.Discount,
                 Status = product.Status,

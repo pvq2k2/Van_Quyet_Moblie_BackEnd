@@ -3,7 +3,8 @@
     public class ProductTypeDTO
     {
         public int ProductTypeID { get; set; }
-        public string? NameProductType { get; set; }
-        public string? ImageTypeProduct { get; set; }
+        public string? Color { get; set; }
+        public string? Size { get; set; }
+        public int Quantity { get; set; }
     }
 }

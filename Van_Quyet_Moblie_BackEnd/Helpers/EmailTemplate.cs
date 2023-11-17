@@ -46,7 +46,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                         class=""m_-4601716730672635853mdv2rw""
                       >
                         <img
-                          src=""https://res.cloudinary.com/assignmentjs/image/upload/v1694752308/unnamed-removebg-preview_uzeord.png""
+                          src=""https://res.cloudinary.com/dbdozmkxv/image/upload/v1700127886/root/logo_vertical_sfyaha.png""
                           width=""150""
 
                           aria-hidden=""true""

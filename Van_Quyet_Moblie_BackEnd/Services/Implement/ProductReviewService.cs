@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QuanLyTrungTam_API.Helper;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Enums;
+using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductReviewRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
@@ -10,12 +12,16 @@ using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
-    public class ProductReviewService : BaseService, IProductReviewService
+    public class ProductReviewService : IProductReviewService
     {
+        private readonly ProductReviewConverter _productReviewConverter;
+        private readonly AppDbContext _dbContext;
         private readonly ResponseObject<ProductReviewDTO> _response;
         private readonly TokenHelper _tokenHelper;
-        public ProductReviewService(ResponseObject<ProductReviewDTO> response, TokenHelper tokenHelper)
+        public ProductReviewService(AppDbContext dbContext, ResponseObject<ProductReviewDTO> response, TokenHelper tokenHelper)
         {
+            _productReviewConverter = new ProductReviewConverter();
+            _dbContext = dbContext;
             _response = response;
             _tokenHelper = tokenHelper;
         }
@@ -32,7 +38,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 {
                     return _response.ResponseError(StatusCodes.Status400BadRequest, "Số sao không được nhỏ hơn 1 hoặc lớn hơn 5 !", null!);
                 }
-                var product = await _context.Product.FirstOrDefaultAsync(x => x.ID == request.ProductID);
+                var product = await _dbContext.Product.FirstOrDefaultAsync(x => x.ID == request.ProductID);
                 if (product == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);
@@ -40,7 +46,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 _tokenHelper.IsToken();
                 var userID = _tokenHelper.GetUserID();
 
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Người dùng không tồn tại !", null!);
                 }
@@ -51,7 +57,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                     UserID = userID,
                     ContentRated = request.ContentRated,
                     PointEvaluation = request.PointEvaluation,
-                    ContentSeen = product.NameProduct,
+                    ContentSeen = product.Name,
                     Status = (int)Status.Active,
                 };
 
@@ -66,7 +72,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<PageResult<ProductReviewDTO>> GetAllProductReview(Pagination pagination)
         {
-            var query = _context.ProductReview.OrderByDescending(x => x.ID).AsQueryable();
+            var query = _dbContext.ProductReview.OrderByDescending(x => x.ID).AsQueryable();
 
             var result = PageResult<ProductReview>.ToPageResult(pagination, query);
             pagination.TotalCount = await query.CountAsync();
@@ -78,7 +84,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<ProductReviewDTO>> GetProductReviewByID(int productReviewID)
         {
-            var productReview = await _context.ProductReview.FirstOrDefaultAsync(x => x.ID == productReviewID);
+            var productReview = await _dbContext.ProductReview.FirstOrDefaultAsync(x => x.ID == productReviewID);
             if (productReview == null)
             {
                 return _response.ResponseError(StatusCodes.Status400BadRequest, "Bình luận không tồn tại không tồn tại !", null!);
@@ -90,14 +96,14 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         public async Task<ResponseObject<string>> RemoveProductReview(int productReviewID)
         {
             var response = new ResponseObject<string>();
-            var productReview = await _context.ProductReview.FirstOrDefaultAsync(x => x.ID == productReviewID);
+            var productReview = await _dbContext.ProductReview.FirstOrDefaultAsync(x => x.ID == productReviewID);
             if (productReview == null)
             {
                 return response.ResponseError(StatusCodes.Status400BadRequest, "Bình luận không tồn tại !", null!);
             }
 
-            _context.ProductReview.Remove(productReview);
-            await _context.SaveChangesAsync();
+            _dbContext.ProductReview.Remove(productReview);
+            await _dbContext.SaveChangesAsync();
 
             return response.ResponseSuccess("Xóa bình luận thành công !", null!);
         }
@@ -106,7 +112,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             try
             {
-                var productReview = await _context.ProductReview.FirstOrDefaultAsync(x => x.ID == productReviewID);
+                var productReview = await _dbContext.ProductReview.FirstOrDefaultAsync(x => x.ID == productReviewID);
 
                 if (productReview == null)
                 {
@@ -124,12 +130,12 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 _tokenHelper.IsToken();
                 var userID = _tokenHelper.GetUserID();
 
-                if (!await _context.User.AnyAsync(x => x.ID == userID))
+                if (!await _dbContext.User.AnyAsync(x => x.ID == userID))
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Người dùng không tồn tại !", null!);
                 }
 
-                var product = await _context.Product.FirstOrDefaultAsync(x => x.ID == request.ProductID);
+                var product = await _dbContext.Product.FirstOrDefaultAsync(x => x.ID == request.ProductID);
                 if (product == null)
                 {
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);

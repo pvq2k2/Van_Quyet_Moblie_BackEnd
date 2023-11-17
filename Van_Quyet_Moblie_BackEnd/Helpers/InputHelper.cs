@@ -185,7 +185,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             {
                 throw new Exception("Chiều cao, rộng, dài và cân nặng phải lớn hơn 0 !");
             }
-            if (string.IsNullOrWhiteSpace(request.NameProduct)
+            if (string.IsNullOrWhiteSpace(request.Name)
                 || string.IsNullOrWhiteSpace(request.Title))
             {
                 throw new Exception("Vui lòng nhập đầy đủ thông tin !");
@@ -208,7 +208,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             {
                 throw new Exception("Chiều cao, rộng, dài và cân nặng phải lớn hơn 0 !");
             }
-            if (string.IsNullOrWhiteSpace(request.NameProduct)
+            if (string.IsNullOrWhiteSpace(request.Name)
                 || string.IsNullOrWhiteSpace(request.Title))
             {
                 throw new Exception("Vui lòng nhập đầy đủ thông tin !");
