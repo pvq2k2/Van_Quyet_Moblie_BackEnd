@@ -18,6 +18,7 @@ using QuanLyTrungTam_API.Helper;
 using CloudinaryDotNet;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.DataContext;
+using Van_Quyet_Moblie_BackEnd.Middleware;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
@@ -70,7 +71,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             }
             catch (Exception ex)
             {
-                throw new ArgumentException($"Lỗi khi gửi mail {ex.Message}");
+                throw new Exception($"Lỗi khi gửi mail {ex.Message}");
             }
         }
 
@@ -121,156 +122,129 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         public async Task<ResponseObject<string>> VerifyEmail(string token)
         {
             var response = new ResponseObject<string>();
-            var account = await _dbContext.Account.FirstOrDefaultAsync(a => a.VerificationToken == token);
-            if (account == null)
-            {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Mã xác thực không hợp lệ !", null!);
-            }
+            var account = await _dbContext.Account.FirstOrDefaultAsync(a => a.VerificationToken == token)
+                ?? throw new CustomException(StatusCodes.Status400BadRequest, "Mã xác thực không hợp lệ !");
             account.Status = 1;
             account.VerifiedAt = DateTime.Now;
 
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
-            return response.ResponseSuccess("Xác thực thành công !", null!);
+            return response.ResponseSuccessNoData("Xác thực thành công !");
         }
 
         public async Task<ResponseObject<AccountDTO>> Register(RegisterRequest request)
         {
+            InputHelper.RegisterValidate(request);
+            if (await _dbContext.Account.AnyAsync(x => x.UserName == request.UserName))
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tên tài khoản đã được sử dụng !");
+            }
+            if (await _dbContext.User.AnyAsync(x => x.Email == request.Email))
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Email đã được sử dụng !");
+            }
+            if (await _dbContext.User.AnyAsync(x => x.Phone == request.Phone))
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Số điện thoại đã được sử dụng !");
+            }
+
+            using var tran = _dbContext.Database.BeginTransaction();
             try
             {
-                InputHelper.RegisterValidate(request);
-                //InputHelper.IsImage(request.Avatar!);
-                if (await _dbContext.Account.AnyAsync(x => x.UserName == request.UserName))
+                var Account = new Entities.Account
                 {
-                    return _responseAccount.ResponseError(StatusCodes.Status400BadRequest, "Tên tài khoản đã được sử dụng !", null!);
-                }
-                if (await _dbContext.User.AnyAsync(x => x.Email == request.Email))
+                    UserName = request.UserName,
+                    Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Status = (int)Status.InActive,
+                    DecentralizationID = (int)Enums.Decentralization.User,
+                    VerificationToken = CreateRandomToken()
+                };
+                await _dbContext.Account.AddAsync(Account);
+                await _dbContext.SaveChangesAsync();
+
+                var User = new User
                 {
-                    return _responseAccount.ResponseError(StatusCodes.Status400BadRequest, "Email đã được sử dụng !", null!);
-                }
-                if (await _dbContext.User.AnyAsync(x => x.Phone == request.Phone))
+                    FullName = InputHelper.NormalizeName(request.FullName!),
+                    Phone = request.Phone,
+                    Email = request.Email,
+                    Gender = request.Gender,
+                    Avatar = null!,
+                    AccountID = Account.ID
+                };
+
+                await _dbContext.User.AddAsync(User);
+                await _dbContext.SaveChangesAsync();
+
+                var EmailContent = new EmailFormat
                 {
-                    return _responseAccount.ResponseError(StatusCodes.Status400BadRequest, "Số điện thoại đã được sử dụng !", null!);
-                }
-                //string avatar = await _cloudinaryHelper.UploadImage(request.Avatar!, "van-quyet-mobile/user", "avatar");
-
-                using var tran = _dbContext.Database.BeginTransaction();
-                try
-                {
-                    var Account = new Entities.Account
-                    {
-                        UserName = request.UserName,
-                        Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                        Status = (int)Status.InActive,
-                        DecentralizationID = (int)Enums.Decentralization.User,
-                        VerificationToken = CreateRandomToken()
-                    };
-                    await _dbContext.Account.AddAsync(Account);
-                    await _dbContext.SaveChangesAsync();
-
-                    var User = new User
-                    {
-                        FullName = InputHelper.NormalizeName(request.FullName),
-                        Phone = request.Phone,
-                        Email = request.Email,
-                        Avatar = null!,
-                        Address = request.Address,
-                        AccountID = Account.ID
-                    };
-
-                    await _dbContext.User.AddAsync(User);
-                    await _dbContext.SaveChangesAsync();
-
-                    var EmailContent = new EmailFormat
-                    {
-                        To = request.Email,
-                        Subject = "Xác thực tài khoản",
-                        Body = EmailTemplate.MailTemplateString(User.FullName!, User.Email!,
-                        "Vui lòng nhấp vào nút kích hoạt tài khoản để kích hoạt tài khoản !",
-                        $"https://localhost:7299/api/Auth/Verify/{Account.VerificationToken}",
-                        "Kích hoạt tài khoản")
-                    };
-                    SendEmail(EmailContent);
+                    To = request.Email!,
+                    Subject = "Xác thực tài khoản",
+                    Body = EmailTemplate.MailTemplateString(User.FullName!, User.Email!,
+                    "Vui lòng nhấp vào nút kích hoạt tài khoản để kích hoạt tài khoản !",
+                    $"https://localhost:7299/api/Auth/Verify/{Account.VerificationToken}",
+                    "Kích hoạt tài khoản")
+                };
+                SendEmail(EmailContent);
 
 
-                    var currentAccount = await _dbContext.Account
-                        .Include(x => x.User)
-                        .Include(x => x.Decentralization)
-                        .FirstOrDefaultAsync(x => x.ID == Account.ID);
-                    await tran.CommitAsync();
-                    return _responseAccount.ResponseSuccess("Tạo tài khoản thành công !", _authConverter.EntityAccountToDTO(currentAccount!));
-                }
-                catch (Exception ex)
-                {
-                    await tran.RollbackAsync();
-                    throw new Exception(ex.Message);
-                }
+                var currentAccount = await _dbContext.Account
+                    .Include(x => x.User)
+                    .Include(x => x.Decentralization)
+                    .FirstOrDefaultAsync(x => x.ID == Account.ID);
+                await tran.CommitAsync();
+                return _responseAccount.ResponseSuccess("Tạo tài khoản thành công !", _authConverter.EntityAccountToDTO(currentAccount!));
             }
             catch (Exception ex)
             {
-                return _responseAccount.ResponseError(StatusCodes.Status400BadRequest, ex.Message, null!);
+                await tran.RollbackAsync();
+                throw new Exception(ex.Message);
             }
         }
 
         public ResponseObject<TokenDTO> ReNewToken(string refreshToken)
         {
-            try
+            _tokenHelper.IsToken();
+
+            var existingRefreshToken = _dbContext.RefreshToken.FirstOrDefault(x => x.Token == refreshToken)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "RefreshToken không tồn tại trong database");
+            if (existingRefreshToken.ExpiredTime < DateTime.Now)
             {
-                _tokenHelper.IsToken();
-
-                var existingRefreshToken = _dbContext.RefreshToken.FirstOrDefault(x => x.Token == refreshToken);
-
-                if (existingRefreshToken == null)
-                {
-                    return _responseAuth.ResponseError(StatusCodes.Status404NotFound, "RefreshToken không tồn tại trong database", null!);
-                }
-
-                if (existingRefreshToken.ExpiredTime < DateTime.Now)
-                {
-                    return _responseAuth.ResponseError(StatusCodes.Status401Unauthorized, "Phiên đăng nhập đã hết hạn", null!);
-                }
-
-                var account = _dbContext.Account
-                    .Include(x => x.User)
-                    .Include(x => x.Decentralization)
-                    .FirstOrDefault(x => x.ID == existingRefreshToken.AccountID);
-
-                if (account == null)
-                {
-                    return _responseAuth.ResponseError(StatusCodes.Status404NotFound, "Tài khoản không tồn tại", null!);
-                }
-
-                var newAccessToken = CreateAccessToken(account);
-                var newRefreshToken = GenerateRefreshToken(account.ID);
-                existingRefreshToken.Token = newRefreshToken.Token;
-                existingRefreshToken.CreatedAt = newRefreshToken.CreatedAt;
-                existingRefreshToken.ExpiredTime = newRefreshToken.ExpiredTime;
-
-                _dbContext.RefreshToken.Update(existingRefreshToken);
-                _dbContext.SaveChanges();
-
-                return _responseAuth.ResponseSuccess("Làm mới token thành công", new TokenDTO { AccessToken = newAccessToken, RefreshToken = newRefreshToken.Token });
+                throw new CustomException(StatusCodes.Status401Unauthorized, "Phiên đăng nhập đã hết hạn");
             }
-            catch (Exception ex)
-            {
-                return _responseAuth.ResponseError(StatusCodes.Status500InternalServerError, ex.Message, null!);
-            }
+
+            var account = _dbContext.Account
+                .Include(x => x.User)
+                .Include(x => x.Decentralization)
+                .FirstOrDefault(x => x.ID == existingRefreshToken.AccountID)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại");
+
+            var newAccessToken = CreateAccessToken(account);
+            var newRefreshToken = GenerateRefreshToken(account.ID);
+            existingRefreshToken.Token = newRefreshToken.Token;
+            existingRefreshToken.CreatedAt = newRefreshToken.CreatedAt;
+            existingRefreshToken.ExpiredTime = newRefreshToken.ExpiredTime;
+
+            _dbContext.RefreshToken.Update(existingRefreshToken);
+            _dbContext.SaveChanges();
+
+            return _responseAuth.ResponseSuccess("Làm mới token thành công", new TokenDTO { AccessToken = newAccessToken, RefreshToken = newRefreshToken.Token });
         }
 
         public async Task<ResponseObject<TokenDTO>> Login(LoginRequest request)
         {
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.UserName == request.UserName);
-            if (account == null || account.Status == (int)Status.InActive)
-            {
-                return _responseAuth.ResponseError(StatusCodes.Status400BadRequest, "Tài khoản không tồn tại !", null!);
-            }
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.UserName == request.UserName)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
             if (!BCrypt.Net.BCrypt.Verify(request.Password, account.Password))
             {
-                return _responseAuth.ResponseError(StatusCodes.Status400BadRequest, "Tài khoản hoặc mật khẩu không chính xác !", null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tài khoản hoặc mật khẩu không chính xác !");
             }
             if (account.VerifiedAt == null)
             {
-                return _responseAuth.ResponseError(StatusCodes.Status400BadRequest, "Tài khoản chưa được xác thực !", null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tài khoản chưa được xác thực !");
+            }
+            if (account.Status != (int)Status.Active)
+            {
+                throw new CustomException(StatusCodes.Status401Unauthorized, "Tài khoản đã bị khóa !");
             }
             var currentAccount = await _dbContext.Account
                 .Include(x => x.User)
@@ -304,11 +278,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         public async Task<ResponseObject<string>> ForgotPassword(string email)
         {
             var response = new ResponseObject<string>();
-            var user = await _dbContext.User.FirstOrDefaultAsync(x => x.Email == email);
-            if (user == null)
-            {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Người dùng không tồn tại !", null!);
-            }
+            var user = await _dbContext.User.FirstOrDefaultAsync(x => x.Email == email)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Người dùng không tồn tại !");
             var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == user.AccountID);
             account!.ResetPasswordToken = CreateRandomToken();
             account.ResetPasswordTokenExpiry = DateTime.Now.AddHours(5);
@@ -326,20 +297,17 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             };
             SendEmail(EmailContent);
 
-            return response.ResponseSuccess("Gửi yêu cầu thành công, vui lòng kiểm tra hộp thư của bạn !", null!);
+            return response.ResponseSuccessNoData("Gửi yêu cầu thành công, vui lòng kiểm tra hộp thư của bạn !");
         }
 
         public async Task<ResponseObject<string>> ResetPassword(ResetPasswordRequest request)
         {
             var response = new ResponseObject<string>();
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ResetPasswordToken == request.Token);
-            if (account == null)
-            {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Mã không hợp lệ !", null!);
-            }
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ResetPasswordToken == request.Token)
+                ?? throw new CustomException(StatusCodes.Status400BadRequest, "Mã không hợp lệ !");
             if (account.ResetPasswordTokenExpiry < DateTime.Now)
             {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Mã đã hết hạn !", null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Mã đã hết hạn !");
             }
             account.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
             account.ResetPasswordToken = null;
@@ -348,42 +316,39 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccess("Đổi mật khẩu thành công !", null!);
+            return response.ResponseSuccessNoData("Đổi mật khẩu thành công !");
         }
 
         public async Task<ResponseObject<string>> ChangePassword(ChangePasswordRequest request)
         {
             var response = new ResponseObject<string>();
-            try
+            _tokenHelper.IsToken();
+            var accountID = _tokenHelper.GetUserID();
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
+
+            if (!BCrypt.Net.BCrypt.Verify(request.OddPassword, account.Password))
             {
-                _tokenHelper.IsToken();
-                var accountID = _tokenHelper.GetUserID();
-                var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID);
-
-                if (account == null)
-                {
-                    return response.ResponseError(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !", null!);
-                }
-
-                if (!BCrypt.Net.BCrypt.Verify(request.OddPassword, account.Password))
-                {
-                    return response.ResponseError(StatusCodes.Status400BadRequest, "Mật khẩu cũ không đúng !", null!);
-                }
-
-                account.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-                _dbContext.Account.Update(account);
-                await _dbContext.SaveChangesAsync();
-
-                return response.ResponseSuccess("Thay đổi mật khẩu thành công !", null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Mật khẩu cũ không đúng !");
             }
-            catch (Exception ex)
-            {
-                return response.ResponseError(StatusCodes.Status500InternalServerError, ex.Message, null!);
-            }
+
+            account.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            _dbContext.Account.Update(account);
+            await _dbContext.SaveChangesAsync();
+
+            return response.ResponseSuccessNoData("Thay đổi mật khẩu thành công !");
         }
 
         public async Task<PageResult<AccountDTO>> GetAllAccount(Pagination pagination)
         {
+            _tokenHelper.IsToken();
+            string role = _tokenHelper.GetRole();
+
+            if (role != "Admin")
+            {
+                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
+            }
+
             var query = _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).OrderByDescending(x => x.ID).AsQueryable();
 
             var result = PageResult<Entities.Account>.ToPageResult(pagination, query);
@@ -396,87 +361,76 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<AccountDTO>> GetAccountByID(int accountID)
         {
-            var account = await _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).FirstOrDefaultAsync(x => x.ID == accountID);
-            if (account == null)
-            {
-                return _responseAccount.ResponseError(StatusCodes.Status404NotFound, $"Tài khoản có ID {accountID} không tồn tại !", null!);
-            }
+            var account = await _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).FirstOrDefaultAsync(x => x.ID == accountID)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, $"Tài khoản có ID {accountID} không tồn tại !");
             return _responseAccount.ResponseSuccess("Thành Công !", _authConverter.EntityAccountToDTO(account));
         }
 
         public async Task<ResponseObject<AccountDTO>> ChangeInformation(ChangeInformationRequest request)
         {
-            try
+            InputHelper.ChangeInformationValidate(request);
+
+            _tokenHelper.IsToken();
+            var accountID = _tokenHelper.GetUserID();
+            var account = await _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).FirstOrDefaultAsync(x => x.ID == accountID)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
+
+            if (await _dbContext.User.AnyAsync(x => x.Email == request.Email) && request.Email != account.User!.Email)
             {
-                InputHelper.ChangeInformationValidate(request);
-
-                _tokenHelper.IsToken();
-                var accountID = _tokenHelper.GetUserID();
-                var account = await _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).FirstOrDefaultAsync(x => x.ID == accountID);
-
-                if (account == null)
-                {
-                    return _responseAccount.ResponseError(StatusCodes.Status404NotFound, "Không tìm thấy tài khoản !", null!);
-                }
-
-                if (await _dbContext.User.AnyAsync(x => x.Email == request.Email) && request.Email != account.User!.Email)
-                {
-                    return _responseAccount.ResponseError(StatusCodes.Status400BadRequest, "Email đã được sử dụng !", null!);
-                }
-                if (await _dbContext.User.AnyAsync(x => x.Phone == request.Phone) && request.Phone != account.User!.Phone)
-                {
-                    return _responseAccount.ResponseError(StatusCodes.Status400BadRequest, "Số điện thoại đã được sử dụng !", null!);
-                }
-                string avatar;
-                if (request.Avatar != null)
-                {
-                    InputHelper.IsImage(request.Avatar!);
-                    avatar = await _cloudinaryHelper.UploadImage(request.Avatar!, "van-quyet-mobile/user", "avatar");
-                    await _cloudinaryHelper.DeleteImageByUrl(account.User!.Avatar);
-                }
-                else
-                {
-                    avatar = account.User!.Avatar;
-                }
-                account.User!.FullName = request.FullName;
-                account.User.Phone = request.Phone;
-                account.User.Email = request.Email;
-                account.User.Avatar = avatar;
-                account.User.Address = request.Address;
-                account.User.UpdatedAt = DateTime.Now;
-                account.UpdatedAt = DateTime.Now;
-
-                _dbContext.Account.Update(account);
-                await _dbContext.SaveChangesAsync();
-
-                return _responseAccount.ResponseSuccess("Cập nhật thông tin thành công !", _authConverter.EntityAccountToDTO(account));
+                throw new CustomException(StatusCodes.Status400BadRequest, "Email đã được sử dụng !");
             }
-            catch (Exception ex)
+            if (await _dbContext.User.AnyAsync(x => x.Phone == request.Phone) && request.Phone != account.User!.Phone)
             {
-                return _responseAccount.ResponseError(StatusCodes.Status500InternalServerError, ex.Message, null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Số điện thoại đã được sử dụng !");
             }
+            string avatar;
+            if (request.Avatar != null)
+            {
+                InputHelper.IsImage(request.Avatar!);
+                avatar = await _cloudinaryHelper.UploadImage(request.Avatar!, "van-quyet-mobile/user", "avatar");
+                await _cloudinaryHelper.DeleteImageByUrl(account.User!.Avatar);
+            }
+            else
+            {
+                avatar = account.User!.Avatar;
+            }
+            account.User!.FullName = request.FullName;
+            account.User.Phone = request.Phone;
+            account.User.Email = request.Email;
+            account.User.Avatar = avatar;
+            account.User.Address = request.Address;
+            account.User.UpdatedAt = DateTime.Now;
+            account.UpdatedAt = DateTime.Now;
+
+            _dbContext.Account.Update(account);
+            await _dbContext.SaveChangesAsync();
+
+            return _responseAccount.ResponseSuccess("Cập nhật thông tin thành công !", _authConverter.EntityAccountToDTO(account));
         }
 
         public async Task<ResponseObject<string>> ChangeStatus(int accountID, int status)
         {
-            var response = new ResponseObject<string>();
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID);
+            _tokenHelper.IsToken();
+            string role = _tokenHelper.GetRole();
 
-            if (account == null)
+            if (role != "Admin")
             {
-                return response.ResponseError(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !", null!);
+                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
             }
+            var response = new ResponseObject<string>();
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID) 
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
 
             if (status != 1 || status != 2)
             {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Trạng thái không đúng!", null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Trạng thái không đúng!");
             }
 
             account.Status = status;
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccess("Chuyển trạng thái thành công !", null!);
+            return response.ResponseSuccessNoData("Chuyển trạng thái thành công !");
         }
     }
 }

@@ -17,10 +17,20 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Response
             ResponseDate = responseDate;
             Data = data;
         }
+        public ResponseObject(int status, string message, DateTime responseDate)
+        {
+            Status = status;
+            Message = message;
+            ResponseDate = responseDate;
+        }
 
         public ResponseObject<T> ResponseSuccess(string message, T data)
         {
             return new ResponseObject<T>(StatusCodes.Status200OK, message, DateTime.Now, data);
+        }
+        public ResponseObject<T> ResponseSuccessNoData(string message)
+        {
+            return new ResponseObject<T>(StatusCodes.Status200OK, message, DateTime.Now);
         }
 
         public ResponseObject<T> ResponseError(int statusCode, string message, T data)

@@ -5,6 +5,7 @@ using Van_Quyet_Moblie_BackEnd.Handle.Request.AuthRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.OrderRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.VoucherRequest;
+using Van_Quyet_Moblie_BackEnd.Middleware;
 
 namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
@@ -44,34 +45,37 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                || string.IsNullOrWhiteSpace(request.Password)
                || string.IsNullOrWhiteSpace(request.FullName)
                || string.IsNullOrWhiteSpace(request.Email)
-               || string.IsNullOrWhiteSpace(request.Phone)
-               || string.IsNullOrWhiteSpace(request.Address))
+               || string.IsNullOrWhiteSpace(request.Phone))
             {
-                throw new Exception("Bạn cần truyền vào đầy đủ thông tin !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Bạn cần truyền vào đầy đủ thông tin !");
             }
             if (CheckLengthOfCharacters(request.FullName))
             {
-                throw new Exception("Họ và tên phải nhỏ hơn 20 ký tự !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Họ và tên phải nhỏ hơn 20 ký tự !");
             }
             if (CheckWordCount(request.FullName))
             {
-                throw new Exception("Họ và tên phải có trên 2 từ !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Họ và tên phải có trên 2 từ !");
             }
             if (!RegexUserName(request.UserName))
             {
-                throw new Exception("Tên tài khoản không được chứa dấu cách và ký tự đặc biệt !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tên tài khoản không được chứa dấu cách và ký tự đặc biệt !");
             }
             if (!RegexPassword(request.Password))
             {
-                throw new Exception("Mật khẩu phải có chữ hoa, chữ thường, chữ số và kí tự đặc biệt !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Mật khẩu phải có chữ hoa, chữ thường, chữ số và kí tự đặc biệt !");
             }
             if (!RegexEmail(request.Email))
             {
-                throw new Exception("Không đúng định dạng email !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Không đúng định dạng email !");
             }
             if (!RegexPhoneNumber(request.Phone))
             {
-                throw new Exception("Không đúng định dạng số điện thoại !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Không đúng định dạng số điện thoại !");
+            }
+            if (request.Gender != 1 || request.Gender != 2)
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Giới tính không phù hợp !");
             }
             return true;
         }
@@ -117,6 +121,10 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             if (!RegexPhoneNumber(request.Phone))
             {
                 throw new Exception("Không đúng định dạng số điện thoại !");
+            }
+            if (request.Gender != 1 || request.Gender != 2)
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Giới tính không phù hợp !");
             }
             return true;
         }

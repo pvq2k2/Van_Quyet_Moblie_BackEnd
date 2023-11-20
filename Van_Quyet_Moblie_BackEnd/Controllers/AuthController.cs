@@ -35,7 +35,6 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
         }
 
         [HttpPost("ReNewToken")]
-        [Authorize]
         public IActionResult ReNewToken(string refreshToken)
         {
             return Ok(_iAuthService.ReNewToken(refreshToken));
@@ -54,14 +53,12 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
         }
 
         [HttpPut("ChangePassword")]
-        [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
             return Ok(await _iAuthService.ChangePassword(request));
         }
 
         [HttpPost("GetAllAccount")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllAccount(Pagination pagination)
         {
             return Ok(await _iAuthService.GetAllAccount(pagination));
@@ -74,14 +71,12 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
         }
 
         [HttpPost("ChangeInformation")]
-        [Authorize]
         public async Task<IActionResult> ChangeInformation([FromForm] ChangeInformationRequest request)
         {
             return Ok(await _iAuthService.ChangeInformation(request));
         }
 
         [HttpPatch("ChangeStatus")]
-        [Authorize]
         public async Task<IActionResult> ChangeStatus(int accountID, int status)
         {
             return Ok(await _iAuthService.ChangeStatus(accountID, status));
