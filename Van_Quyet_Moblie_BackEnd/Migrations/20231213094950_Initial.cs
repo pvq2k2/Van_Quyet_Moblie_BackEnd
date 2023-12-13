@@ -73,23 +73,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProductType",
-                columns: table => new
-                {
-                    ID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Color = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Size = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductType", x => x.ID);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "SubCategories",
                 columns: table => new
                 {
@@ -100,8 +83,7 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     Slug = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CategoriesID = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SubCategoriesID = table.Column<int>(type: "int", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -112,11 +94,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                         principalTable: "Categories",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SubCategories_SubCategories_SubCategoriesID",
-                        column: x => x.SubCategoriesID,
-                        principalTable: "SubCategories",
-                        principalColumn: "ID");
                 });
 
             migrationBuilder.CreateTable(
@@ -153,7 +130,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 {
                     ID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ProductTypeID = table.Column<int>(type: "int", nullable: false),
                     SubCategoriesID = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Slug = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -173,12 +149,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Product", x => x.ID);
-                    table.ForeignKey(
-                        name: "FK_Product_ProductType_ProductTypeID",
-                        column: x => x.ProductTypeID,
-                        principalTable: "ProductType",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Product_SubCategories_SubCategoriesID",
                         column: x => x.SubCategoriesID,
@@ -216,9 +186,9 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     ID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Avatar = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NumberPhone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Avatar = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Gender = table.Column<int>(type: "int", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AccountID = table.Column<int>(type: "int", nullable: false),
@@ -254,6 +224,30 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     table.PrimaryKey("PK_ProductImage", x => x.ID);
                     table.ForeignKey(
                         name: "FK_ProductImage_Product_ProductID",
+                        column: x => x.ProductID,
+                        principalTable: "Product",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductType",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductID = table.Column<int>(type: "int", nullable: false),
+                    Color = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Size = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductType", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_ProductType_Product_ProductID",
                         column: x => x.ProductID,
                         principalTable: "Product",
                         principalColumn: "ID",
@@ -542,11 +536,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 column: "ProductID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Product_ProductTypeID",
-                table: "Product",
-                column: "ProductTypeID");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Product_SubCategoriesID",
                 table: "Product",
                 column: "SubCategoriesID");
@@ -567,6 +556,11 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProductType_ProductID",
+                table: "ProductType",
+                column: "ProductID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshToken_AccountID",
                 table: "RefreshToken",
                 column: "AccountID",
@@ -581,11 +575,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 name: "IX_SubCategories_CategoriesID",
                 table: "SubCategories",
                 column: "CategoriesID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SubCategories_SubCategoriesID",
-                table: "SubCategories",
-                column: "SubCategoriesID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_User_AccountID",
@@ -625,6 +614,9 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                 name: "ProductReview");
 
             migrationBuilder.DropTable(
+                name: "ProductType");
+
+            migrationBuilder.DropTable(
                 name: "RefreshToken");
 
             migrationBuilder.DropTable(
@@ -650,9 +642,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
             migrationBuilder.DropTable(
                 name: "Payment");
-
-            migrationBuilder.DropTable(
-                name: "ProductType");
 
             migrationBuilder.DropTable(
                 name: "SubCategories");

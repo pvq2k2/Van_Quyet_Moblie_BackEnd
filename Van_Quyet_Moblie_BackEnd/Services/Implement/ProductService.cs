@@ -45,7 +45,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                     Discount = request.Discount,
                     Title = request.Title,
                     Status = (int)Status.Active,
-                    ProductTypeID = request.ProductTypeID
                 };
 
                 await _dbContext.Product.AddAsync(product);
@@ -117,7 +116,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             }
 
             var relatedProducts = _dbContext.Product
-            .Where(p => p.ProductTypeID == currentProduct.ProductTypeID && p.ID != currentProduct.ID)
+            .Where(p => p.SubCategoriesID == currentProduct.SubCategoriesID && p.ID != currentProduct.ID)
             .OrderByDescending(p => p.NumberOfViews)
             .Take(5)
             .ToList();
@@ -174,7 +173,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 product.Image = img;
                 product.Discount = request.Discount;
                 product.Status = request.Status;
-                product.ProductTypeID = request.ProductTypeID;
                 product.UpdatedAt = DateTime.Now;
 
                 _dbContext.Product.Update(product);

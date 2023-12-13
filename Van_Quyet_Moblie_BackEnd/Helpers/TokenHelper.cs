@@ -1,5 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Van_Quyet_Moblie_BackEnd.Middleware;
 
@@ -50,8 +51,8 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
 
         public string GetRole()
         {
-            var roleClaim = _httpContextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "Role");
-            string role = roleClaim!.Value;
+            var roleClaim = _httpContextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+            string role = roleClaim!.Value.ToString();
             if (string.IsNullOrEmpty(role))
             {
                 throw new Exception("Không lấy được role");

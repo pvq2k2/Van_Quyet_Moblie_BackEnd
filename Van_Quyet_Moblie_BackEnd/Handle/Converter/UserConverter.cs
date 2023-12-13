@@ -10,7 +10,7 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
             return new UserDTO { 
                 UserID = user.ID,
                 FullName = user.FullName,
-                Phone = user.Phone,
+                NumberPhone = user.NumberPhone,
                 Avatar = user.Avatar,
                 Email = user.Email,
                 Address = user.Address,

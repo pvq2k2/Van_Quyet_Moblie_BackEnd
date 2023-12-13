@@ -19,6 +19,7 @@ using CloudinaryDotNet;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Middleware;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Auth;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
@@ -27,17 +28,19 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         private readonly AuthConverter _authConverter;
         private readonly AppDbContext _dbContext;
         private readonly ResponseObject<AccountDTO> _responseAccount;
-        private readonly ResponseObject<TokenDTO> _responseAuth;
+        private readonly ResponseObject<AuthDTO> _responseAuth;
         private readonly IConfiguration _configuration;
         private readonly CloudinaryHelper _cloudinaryHelper;
         private readonly TokenHelper _tokenHelper;
+        private readonly Response _response;
 
         public AuthService(AppDbContext dbContext,
             ResponseObject<AccountDTO> responseAccount,
-            ResponseObject<TokenDTO> responseAuth,
+            ResponseObject<AuthDTO> responseAuth,
             IConfiguration configuration,
             CloudinaryHelper cloudinaryHelper,
-            TokenHelper tokenHelper)
+            TokenHelper tokenHelper,
+            Response response)
         {
             _authConverter = new AuthConverter();
             _dbContext = dbContext;
@@ -46,13 +49,13 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _configuration = configuration;
             _cloudinaryHelper = cloudinaryHelper;
             _tokenHelper = tokenHelper;
+            _response = response;
         }
         #region Private Function
         private static string CreateRandomToken()
         {
             return Convert.ToHexString(RandomNumberGenerator.GetBytes(64));
         }
-
         private void SendEmail(EmailFormat request)
         {
             try
@@ -74,7 +77,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 throw new Exception($"Lỗi khi gửi mail {ex.Message}");
             }
         }
-
         private string CreateAccessToken(Entities.Account account)
         {
             var claims = new List<Claim>
@@ -82,13 +84,11 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 new Claim("ID", account.ID.ToString()),
                 new Claim(ClaimTypes.Name, account.User!.FullName!),
                 new Claim(ClaimTypes.Email, account.User!.Email!),
-                new Claim("Avatar", account.User!.Avatar!),
-                new Claim("RoleID", account.DecentralizationID.ToString()),
                 new Claim(ClaimTypes.Role, account.Decentralization!.Name!),
             };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                _configuration.GetSection("AppSettings:AccessTokenSecret").Value!));
+                 _configuration.GetSection("AppSettings:AccessTokenSecret").Value!));
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -101,7 +101,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
             return jwt;
         }
-
         private static RefreshToken GenerateRefreshToken(int AccountID)
         {
             var refreshToken = new RefreshToken
@@ -114,25 +113,19 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
             return refreshToken;
         }
-
-
         #endregion
-
-
-        public async Task<ResponseObject<string>> VerifyEmail(string token)
+        public async Task<Response> VerifyEmail(string token)
         {
-            var response = new ResponseObject<string>();
             var account = await _dbContext.Account.FirstOrDefaultAsync(a => a.VerificationToken == token)
                 ?? throw new CustomException(StatusCodes.Status400BadRequest, "Mã xác thực không hợp lệ !");
-            account.Status = 1;
+            account.Status = 2;
             account.VerifiedAt = DateTime.Now;
 
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
-            return response.ResponseSuccessNoData("Xác thực thành công !");
+            return _response.ResponseSuccess("Xác thực thành công !");
         }
-
-        public async Task<ResponseObject<AccountDTO>> Register(RegisterRequest request)
+        public async Task<Response> Register(RegisterRequest request)
         {
             InputHelper.RegisterValidate(request);
             if (await _dbContext.Account.AnyAsync(x => x.UserName == request.UserName))
@@ -143,7 +136,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Email đã được sử dụng !");
             }
-            if (await _dbContext.User.AnyAsync(x => x.Phone == request.Phone))
+            if (await _dbContext.User.AnyAsync(x => x.NumberPhone == request.NumberPhone))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Số điện thoại đã được sử dụng !");
             }
@@ -165,10 +158,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 var User = new User
                 {
                     FullName = InputHelper.NormalizeName(request.FullName!),
-                    Phone = request.Phone,
+                    NumberPhone = request.NumberPhone,
                     Email = request.Email,
                     Gender = request.Gender,
-                    Avatar = null!,
+                    Avatar = request.Gender == 1 ? "https://res.cloudinary.com/dbdozmkxv/image/upload/v1700127887/root/nam_pjwipr.jpg" : "https://res.cloudinary.com/dbdozmkxv/image/upload/v1700127885/root/nu_uqiotb.jpg",
                     AccountID = Account.ID
                 };
 
@@ -181,18 +174,13 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                     Subject = "Xác thực tài khoản",
                     Body = EmailTemplate.MailTemplateString(User.FullName!, User.Email!,
                     "Vui lòng nhấp vào nút kích hoạt tài khoản để kích hoạt tài khoản !",
-                    $"https://localhost:7299/api/Auth/Verify/{Account.VerificationToken}",
+                    $"{_configuration.GetSection("AppSettings:BaseURLFE").Value!}/verify-account/{Account.VerificationToken}",
                     "Kích hoạt tài khoản")
                 };
                 SendEmail(EmailContent);
 
-
-                var currentAccount = await _dbContext.Account
-                    .Include(x => x.User)
-                    .Include(x => x.Decentralization)
-                    .FirstOrDefaultAsync(x => x.ID == Account.ID);
                 await tran.CommitAsync();
-                return _responseAccount.ResponseSuccess("Tạo tài khoản thành công !", _authConverter.EntityAccountToDTO(currentAccount!));
+                return _response.ResponseSuccess("Tạo tài khoản thành công !");
             }
             catch (Exception ex)
             {
@@ -200,12 +188,11 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 throw new Exception(ex.Message);
             }
         }
-
-        public ResponseObject<TokenDTO> ReNewToken(string refreshToken)
+        public async Task<ResponseObject<AuthDTO>> ReNewToken(string refreshToken)
         {
             _tokenHelper.IsToken();
 
-            var existingRefreshToken = _dbContext.RefreshToken.FirstOrDefault(x => x.Token == refreshToken)
+            var existingRefreshToken = await _dbContext.RefreshToken.FirstOrDefaultAsync(x => x.Token == refreshToken)
                 ?? throw new CustomException(StatusCodes.Status404NotFound, "RefreshToken không tồn tại trong database");
             if (existingRefreshToken.ExpiredTime < DateTime.Now)
             {
@@ -225,14 +212,24 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             existingRefreshToken.ExpiredTime = newRefreshToken.ExpiredTime;
 
             _dbContext.RefreshToken.Update(existingRefreshToken);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
 
-            return _responseAuth.ResponseSuccess("Làm mới token thành công", new TokenDTO { AccessToken = newAccessToken, RefreshToken = newRefreshToken.Token });
+            var responseAccount = new AuthDTO
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken.Token,
+                UserName = account.UserName,
+                Avatar = account.User!.Avatar,
+                Role = account.DecentralizationID
+            };
+
+            return _responseAuth.ResponseSuccess("Làm mới token thành công", responseAccount);
         }
-
-        public async Task<ResponseObject<TokenDTO>> Login(LoginRequest request)
+        public async Task<ResponseObject<AuthDTO>> Login(LoginRequest request)
         {
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.UserName == request.UserName)
+            var user = await _dbContext.User.FirstOrDefaultAsync(x => x.Email == request.Email)
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == user.AccountID) 
                 ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
             if (!BCrypt.Net.BCrypt.Verify(request.Password, account.Password))
             {
@@ -272,14 +269,21 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 await _dbContext.SaveChangesAsync();
             }
 
-            return _responseAuth.ResponseSuccess("Đăng nhập thành công !", new TokenDTO { AccessToken = accessToken, RefreshToken = refreshToken.Token });
-        }
+            var responseAccount = new AuthDTO
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                UserName = currentAccount.UserName,
+                Avatar = currentAccount.User!.Avatar,
+                Role = account.DecentralizationID
+            };
 
-        public async Task<ResponseObject<string>> ForgotPassword(string email)
+            return _responseAuth.ResponseSuccess("Đăng nhập thành công !", responseAccount);
+        }
+        public async Task<Response> ForgotPassword(string email)
         {
-            var response = new ResponseObject<string>();
             var user = await _dbContext.User.FirstOrDefaultAsync(x => x.Email == email)
-                ?? throw new CustomException(StatusCodes.Status404NotFound, "Người dùng không tồn tại !");
+                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
             var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == user.AccountID);
             account!.ResetPasswordToken = CreateRandomToken();
             account.ResetPasswordTokenExpiry = DateTime.Now.AddHours(5);
@@ -292,17 +296,15 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 Subject = "Đặt lại mật khẩu",
                 Body = EmailTemplate.MailTemplateString(user.FullName!, user.Email!,
                 "Vui lòng nhấp vào nút đổi mật khẩu để đổi mật khẩu !. \nMã chỉ có hiệu lực trong vòng 5 giờ tính từ khi gửi yêu cầu !",
-                $"https://localhost:7299/api/Auth/change-password/{account.ResetPasswordToken}",
+                $"{_configuration.GetSection("AppSettings:BaseURLFE").Value!}/reset-password/{account.ResetPasswordToken}",
                 "Đổi mật khẩu")
             };
             SendEmail(EmailContent);
 
-            return response.ResponseSuccessNoData("Gửi yêu cầu thành công, vui lòng kiểm tra hộp thư của bạn !");
+            return _response.ResponseSuccess("Gửi yêu cầu thành công !");
         }
-
-        public async Task<ResponseObject<string>> ResetPassword(ResetPasswordRequest request)
+        public async Task<Response> ResetPassword(ResetPasswordRequest request)
         {
-            var response = new ResponseObject<string>();
             var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ResetPasswordToken == request.Token)
                 ?? throw new CustomException(StatusCodes.Status400BadRequest, "Mã không hợp lệ !");
             if (account.ResetPasswordTokenExpiry < DateTime.Now)
@@ -316,12 +318,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccessNoData("Đổi mật khẩu thành công !");
+            return _response.ResponseSuccess("Đặt lại mật khẩu thành công !");
         }
-
-        public async Task<ResponseObject<string>> ChangePassword(ChangePasswordRequest request)
+        public async Task<Response> ChangePassword(ChangePasswordRequest request)
         {
-            var response = new ResponseObject<string>();
             _tokenHelper.IsToken();
             var accountID = _tokenHelper.GetUserID();
             var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID)
@@ -336,9 +336,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccessNoData("Thay đổi mật khẩu thành công !");
+            return _response.ResponseSuccess("Thay đổi mật khẩu thành công !");
         }
-
         public async Task<PageResult<AccountDTO>> GetAllAccount(Pagination pagination)
         {
             _tokenHelper.IsToken();
@@ -358,15 +357,13 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
             return new PageResult<AccountDTO>(pagination, _authConverter.ListEntityAccountToDTO(result.ToList()));
         }
-
         public async Task<ResponseObject<AccountDTO>> GetAccountByID(int accountID)
         {
             var account = await _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).FirstOrDefaultAsync(x => x.ID == accountID)
                 ?? throw new CustomException(StatusCodes.Status404NotFound, $"Tài khoản có ID {accountID} không tồn tại !");
             return _responseAccount.ResponseSuccess("Thành Công !", _authConverter.EntityAccountToDTO(account));
         }
-
-        public async Task<ResponseObject<AccountDTO>> ChangeInformation(ChangeInformationRequest request)
+        public async Task<ResponseObject<AuthDTO>> ChangeInformation(ChangeInformationRequest request)
         {
             InputHelper.ChangeInformationValidate(request);
 
@@ -379,7 +376,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Email đã được sử dụng !");
             }
-            if (await _dbContext.User.AnyAsync(x => x.Phone == request.Phone) && request.Phone != account.User!.Phone)
+            if (await _dbContext.User.AnyAsync(x => x.NumberPhone == request.NumberPhone) && request.NumberPhone != account.User!.NumberPhone)
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Số điện thoại đã được sử dụng !");
             }
@@ -388,16 +385,26 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 InputHelper.IsImage(request.Avatar!);
                 avatar = await _cloudinaryHelper.UploadImage(request.Avatar!, "van-quyet-mobile/user", "avatar");
-                await _cloudinaryHelper.DeleteImageByUrl(account.User!.Avatar);
+                await _cloudinaryHelper.DeleteImageByUrl(account.User!.Avatar!);
             }
             else
             {
-                avatar = account.User!.Avatar;
+                string defaultAvatarMale = "https://res.cloudinary.com/dbdozmkxv/image/upload/v1700127887/root/nam_pjwipr.jpg";
+                string defaultAvatarFamele = "https://res.cloudinary.com/dbdozmkxv/image/upload/v1700127885/root/nu_uqiotb.jpg";
+                if (account.User?.Avatar != defaultAvatarMale && account.User?.Avatar != defaultAvatarFamele)
+                {
+                    avatar = account.User?.Avatar!;
+                }
+                else
+                {
+                    avatar = request.Gender == 1 ? defaultAvatarMale : defaultAvatarFamele;
+                }
             }
             account.User!.FullName = request.FullName;
-            account.User.Phone = request.Phone;
+            account.User.NumberPhone = request.NumberPhone;
             account.User.Email = request.Email;
             account.User.Avatar = avatar;
+            account.User.Gender = request.Gender;
             account.User.Address = request.Address;
             account.User.UpdatedAt = DateTime.Now;
             account.UpdatedAt = DateTime.Now;
@@ -405,10 +412,43 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            return _responseAccount.ResponseSuccess("Cập nhật thông tin thành công !", _authConverter.EntityAccountToDTO(account));
-        }
+            var currentAccount = await _dbContext.Account
+                .Include(x => x.User)
+                .Include(x => x.Decentralization)
+                .FirstOrDefaultAsync(x => x.ID == account.ID);
 
-        public async Task<ResponseObject<string>> ChangeStatus(int accountID, int status)
+            string accessToken = CreateAccessToken(currentAccount!);
+
+            var refreshToken = GenerateRefreshToken(currentAccount!.ID);
+
+            var myRefreshToken = await _dbContext.RefreshToken.FirstOrDefaultAsync(x => x.AccountID == currentAccount.ID);
+
+            if (myRefreshToken == null)
+            {
+                await _dbContext.RefreshToken.AddAsync(refreshToken);
+                await _dbContext.SaveChangesAsync();
+            }
+            else
+            {
+                myRefreshToken.Token = refreshToken.Token;
+                myRefreshToken.CreatedAt = refreshToken.CreatedAt;
+                myRefreshToken.ExpiredTime = refreshToken.ExpiredTime;
+
+                _dbContext.RefreshToken.Update(myRefreshToken);
+                await _dbContext.SaveChangesAsync();
+            }
+            var responseAccount = new AuthDTO
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                UserName = currentAccount.UserName,
+                Avatar = currentAccount.User!.Avatar,
+                Role = account.DecentralizationID
+            };
+
+            return _responseAuth.ResponseSuccess("Cập nhật thông tin thành công !", responseAccount);
+        }
+        public async Task<Response> ChangeStatus(int accountID, int status)
         {
             _tokenHelper.IsToken();
             string role = _tokenHelper.GetRole();
@@ -417,11 +457,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
             }
-            var response = new ResponseObject<string>();
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID) 
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID)
                 ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
 
-            if (status != 1 || status != 2)
+            if (status != 1 && status != 2)
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Trạng thái không đúng!");
             }
@@ -430,7 +469,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _dbContext.Account.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccessNoData("Chuyển trạng thái thành công !");
+            return _response.ResponseSuccess("Chuyển trạng thái thành công !");
         }
     }
 }

@@ -2,7 +2,6 @@
 {
     public class Product : BaseEntity
     {
-        public int ProductTypeID { get; set; }
         public int SubCategoriesID { get; set; }
         public string? Name { get; set; }
         public string? Slug { get; set; }
@@ -19,7 +18,7 @@
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
-        public ProductType? ProductType { get; set; }
+        public List<ProductType>? ListProductType { get; set; }
         public SubCategories? SubCategories { get; set; }
         public List<ProductImage>? ListProductImage { get; set; }
         public List<ProductReview>? ListProductReview { get; set; }

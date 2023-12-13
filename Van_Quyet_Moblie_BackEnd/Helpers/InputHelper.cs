@@ -45,7 +45,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                || string.IsNullOrWhiteSpace(request.Password)
                || string.IsNullOrWhiteSpace(request.FullName)
                || string.IsNullOrWhiteSpace(request.Email)
-               || string.IsNullOrWhiteSpace(request.Phone))
+               || string.IsNullOrWhiteSpace(request.NumberPhone))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Bạn cần truyền vào đầy đủ thông tin !");
             }
@@ -59,7 +59,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             }
             if (!RegexUserName(request.UserName))
             {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Tên tài khoản không được chứa dấu cách và ký tự đặc biệt !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tên tài khoản không được chứa chữ hoa, dấu cách và ký tự đặc biệt !");
             }
             if (!RegexPassword(request.Password))
             {
@@ -69,11 +69,11 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Không đúng định dạng email !");
             }
-            if (!RegexPhoneNumber(request.Phone))
+            if (!RegexPhoneNumber(request.NumberPhone))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Không đúng định dạng số điện thoại !");
             }
-            if (request.Gender != 1 || request.Gender != 2)
+            if (request.Gender != 1 && request.Gender != 2)
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Giới tính không phù hợp !");
             }
@@ -101,7 +101,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
         {
             if (string.IsNullOrWhiteSpace(request.FullName)
                || string.IsNullOrWhiteSpace(request.Email)
-               || string.IsNullOrWhiteSpace(request.Phone)
+               || string.IsNullOrWhiteSpace(request.NumberPhone)
                || string.IsNullOrWhiteSpace(request.Address))
             {
                 throw new Exception("Bạn cần truyền vào đầy đủ thông tin !");
@@ -118,7 +118,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             {
                 throw new Exception("Không đúng định dạng email !");
             }
-            if (!RegexPhoneNumber(request.Phone))
+            if (!RegexPhoneNumber(request.NumberPhone))
             {
                 throw new Exception("Không đúng định dạng số điện thoại !");
             }
@@ -254,7 +254,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
 
         public static bool RegexUserName(string userName)
         {
-            string pattern = @"^[a-zA-Z0-9_]+$";
+            string pattern = @"^[a-z0-9_]+$";
 
             return Regex.IsMatch(userName, pattern);
         }
