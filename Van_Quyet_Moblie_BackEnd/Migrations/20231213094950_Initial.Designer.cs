@@ -12,7 +12,7 @@ using Van_Quyet_Moblie_BackEnd.DataContext;
 namespace Van_Quyet_Moblie_BackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231117203050_Initial")]
+    [Migration("20231213094950_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -355,9 +355,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<double>("Price")
                         .HasColumnType("float");
 
-                    b.Property<int>("ProductTypeID")
-                        .HasColumnType("int");
-
                     b.Property<string>("Slug")
                         .HasColumnType("nvarchar(max)");
 
@@ -380,8 +377,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("ID");
-
-                    b.HasIndex("ProductTypeID");
 
                     b.HasIndex("SubCategoriesID");
 
@@ -476,6 +471,9 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -486,6 +484,8 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("ProductID");
 
                     b.ToTable("ProductType");
                 });
@@ -607,7 +607,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Avatar")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -619,10 +618,10 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<string>("FullName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Gender")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Phone")
+                    b.Property<string>("NumberPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -792,19 +791,11 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Product", b =>
                 {
-                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.ProductType", "ProductType")
-                        .WithMany("ListProduct")
-                        .HasForeignKey("ProductTypeID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.SubCategories", "SubCategories")
                         .WithMany()
                         .HasForeignKey("SubCategoriesID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ProductType");
 
                     b.Navigation("SubCategories");
                 });
@@ -837,6 +828,17 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductType", b =>
+                {
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Product", "Product")
+                        .WithMany("ListProductType")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.RefreshToken", b =>
@@ -959,11 +961,8 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Navigation("ListProductImage");
 
                     b.Navigation("ListProductReview");
-                });
 
-            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductType", b =>
-                {
-                    b.Navigation("ListProduct");
+                    b.Navigation("ListProductType");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.SubCategories", b =>

@@ -3,9 +3,9 @@
     public class User : BaseEntity
     {
         public string? FullName { get; set; }
-        public string? Phone { get; set; }
-        public string Avatar { get; set; } = string.Empty;
-        public string? Gender { get; set; }
+        public string? NumberPhone { get; set; }
+        public string? Avatar { get; set; }
+        public int Gender { get; set; }
         public string? Email { get; set; }
         public string? Address { get; set; }
         public int AccountID { get; set; }

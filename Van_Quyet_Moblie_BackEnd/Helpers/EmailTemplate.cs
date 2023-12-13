@@ -135,7 +135,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                           ""
                         >
                           <div style=""direction: ltr"">
-                            © 2023 The Pizza House,
+                            ©  <script> document.write(new Date().getFullYear() + "",""); </script> Văn Quyết Mobile,
                             <a
                               class=""m_-4601716730672635853afal""
                               style=""

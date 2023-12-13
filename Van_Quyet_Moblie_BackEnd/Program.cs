@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Auth;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Middleware;
@@ -76,7 +77,9 @@ builder.Services.AddTransient<TokenHelper>();
 builder.Services.AddTransient<GHNHelper>();
 
 
+builder.Services.AddSingleton<Response>();
 builder.Services.AddSingleton<ResponseObject<AccountDTO>>();
+builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductImageDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductTypeDTO>>();
