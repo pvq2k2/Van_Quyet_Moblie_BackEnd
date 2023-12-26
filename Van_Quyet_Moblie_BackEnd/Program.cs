@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Auth;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Categories;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Middleware;
@@ -65,6 +66,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<IProductTypeService, ProductTypeService>();
+builder.Services.AddTransient<ICategoriesService, CategoriesService>();
 builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddTransient<IDecentralizationService, DecentralizationService>();
 builder.Services.AddTransient<IProductImageService, ProductImageService>();
@@ -79,6 +81,7 @@ builder.Services.AddTransient<GHNHelper>();
 
 builder.Services.AddSingleton<Response>();
 builder.Services.AddSingleton<ResponseObject<AccountDTO>>();
+builder.Services.AddSingleton<ResponseObject<CategoriesDTO>>();
 builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductImageDTO>>();

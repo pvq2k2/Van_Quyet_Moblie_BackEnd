@@ -10,7 +10,7 @@
         public DateTime? UpdatedAt { get; set; }
         
         public Categories? Categories { get; set; }
-        public List<SubCategories>? ListSubCategories { get; set; }
+        public List<Product>? ListProduct { get; set; }
 
     }
 }
