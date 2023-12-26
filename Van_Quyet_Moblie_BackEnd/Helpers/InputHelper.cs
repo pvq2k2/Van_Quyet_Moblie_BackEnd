@@ -251,6 +251,11 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             TextInfo textInfo = new CultureInfo("vi-VN", false).TextInfo;
             return textInfo.ToTitleCase(fullName.ToLower());
         }
+        public static string CreateSlug(string name)
+        {
+            return string.Join("-", name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLower();
+        }
+
 
         public static bool RegexUserName(string userName)
         {

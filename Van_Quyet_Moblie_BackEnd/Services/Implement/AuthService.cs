@@ -190,13 +190,11 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         }
         public async Task<ResponseObject<AuthDTO>> ReNewToken(string refreshToken)
         {
-            _tokenHelper.IsToken();
-
             var existingRefreshToken = await _dbContext.RefreshToken.FirstOrDefaultAsync(x => x.Token == refreshToken)
                 ?? throw new CustomException(StatusCodes.Status404NotFound, "RefreshToken không tồn tại trong database");
             if (existingRefreshToken.ExpiredTime < DateTime.Now)
             {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Phiên đăng nhập đã hết hạn");
+                throw new CustomException(StatusCodes.Status419AuthenticationTimeout, "Phiên đăng nhập đã hết hạn");
             }
 
             var account = _dbContext.Account
@@ -218,7 +216,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken.Token,
-                UserName = account.UserName,
+                FullName = account.User!.FullName,
                 Avatar = account.User!.Avatar,
                 Role = account.DecentralizationID
             };
@@ -241,7 +239,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             }
             if (account.Status != (int)Status.Active)
             {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Tài khoản đã bị khóa !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tài khoản đã bị khóa !");
             }
             var currentAccount = await _dbContext.Account
                 .Include(x => x.User)
@@ -273,7 +271,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken.Token,
-                UserName = currentAccount.UserName,
+                FullName = currentAccount.User!.FullName,
                 Avatar = currentAccount.User!.Avatar,
                 Role = account.DecentralizationID
             };
@@ -441,7 +439,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken.Token,
-                UserName = currentAccount.UserName,
+                FullName = currentAccount.User!.FullName,
                 Avatar = currentAccount.User!.Avatar,
                 Role = account.DecentralizationID
             };
