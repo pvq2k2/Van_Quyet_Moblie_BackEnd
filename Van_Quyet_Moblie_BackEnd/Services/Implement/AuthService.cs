@@ -94,7 +94,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
             var token = new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.Now.AddHours(4),
+                expires: DateTime.Now.AddHours(10),
                 signingCredentials: creds);
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
@@ -105,7 +105,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             var refreshToken = new RefreshToken
             {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Token = CreateRandomToken(),
                 AccountID = AccountID,
                 CreatedAt = DateTime.Now,
                 ExpiredTime = DateTime.Now.AddDays(5)
