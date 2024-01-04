@@ -15,25 +15,25 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
         {
             if (imageFile == null || imageFile.Length == 0)
             {
-                throw new Exception("Không có ảnh nào được chọn !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Không có ảnh nào được chọn !");
             }
 
-            string[] allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+            string[] allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg" };
             var fileExtension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
             if (!allowedExtensions.Contains(fileExtension))
             {
-                throw new Exception("File này không phải file có định dạng ảnh");
+                throw new CustomException(StatusCodes.Status400BadRequest, "File này không phải file có định dạng ảnh");
             }
 
             if (imageFile.Length > maxSizeInBytes)
             {
-                throw new Exception("Kích thước file quá lớn");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Kích thước file quá lớn");
             }
 
             var image = Image.Load<Rgba32>(imageFile.OpenReadStream());
             if (image.Width < 0 || image.Height < 0)
             {
-                throw new Exception("Ảnh không phù hợp !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Ảnh không phù hợp !");
             }
 
             return true;
@@ -157,7 +157,6 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             }
             return true;
         }
-
         public static bool UpdateOrderValidate(UpdateOrderRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.FullName)
@@ -209,7 +208,6 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
 
             return true;
         }
-
         public static bool UpdateProductValidate(UpdateProductRequest request)
         {
             if (request.Height < 1 || request.Width < 1 || request.Length < 1 || request.Weight < 1)
@@ -256,28 +254,24 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             return string.Join("-", name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLower();
         }
 
-
         public static bool RegexUserName(string userName)
         {
             string pattern = @"^[a-z0-9_]+$";
 
             return Regex.IsMatch(userName, pattern);
         }
-
         public static bool RegexPassword(string password)
         {
             string pattern = @"^(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]+$";
 
             return Regex.IsMatch(password, pattern);
         }
-
         public static bool RegexEmail(string email)
         {
             string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
 
             return Regex.IsMatch(email, pattern);
         }
-
         public static bool RegexPhoneNumber(string phoneNumber)
         {
             string pattern = @"^(?:\+84|0)(?:3[2-9]|5[689]|7[06-9]|8[1-9]|9[0-9])[0-9]{7}$";
