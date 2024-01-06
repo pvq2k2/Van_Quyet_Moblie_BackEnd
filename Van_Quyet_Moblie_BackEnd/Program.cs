@@ -66,7 +66,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddTransient<IAuthService, AuthService>();
-builder.Services.AddTransient<IProductTypeService, ProductTypeService>();
 builder.Services.AddTransient<ICategoriesService, CategoriesService>();
 builder.Services.AddTransient<ISubCategoriesService, SubCategoriesService>();
 builder.Services.AddTransient<IProductService, ProductService>();
@@ -88,7 +87,6 @@ builder.Services.AddSingleton<ResponseObject<SubCategoriesDTO>>();
 builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductImageDTO>>();
-builder.Services.AddSingleton<ResponseObject<ProductTypeDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductReviewDTO>>();
 builder.Services.AddSingleton<ResponseObject<DecentralizationDTO>>();

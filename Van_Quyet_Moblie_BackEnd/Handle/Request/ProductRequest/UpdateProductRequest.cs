@@ -3,7 +3,6 @@
     public class UpdateProductRequest
     {
         public string? Name { get; set; }
-        public int ProductTypeID { get; set; }
         public double Price { get; set; }
         public IFormFile? Image { get; set; }
         public string? Title { get; set; }

@@ -18,7 +18,9 @@ namespace Van_Quyet_Moblie_BackEnd.DataContext
         public DbSet<Product> Product { get; set; }
         public DbSet<ProductImage> ProductImage { get; set; }
         public DbSet<ProductReview> ProductReview { get; set; }
-        public DbSet<ProductType> ProductType { get; set; }
+        public DbSet<ProductAttribute> ProductAttribute { get; set; }
+        public DbSet<Entities.Color> Color { get; set; }
+        public DbSet<Entities.Size> Size { get; set; }
         public DbSet<RefreshToken> RefreshToken { get; set; }
         public DbSet<Slides> Slides { get; set; }
         public DbSet<SubCategories> SubCategories { get; set; }
