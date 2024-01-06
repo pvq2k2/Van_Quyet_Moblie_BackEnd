@@ -30,10 +30,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             try
             {
                 InputHelper.CreateProductValidate(request);
-                if (!await _dbContext.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
-                {
-                    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
-                }
+                //if (!await _dbContext.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
+                //{
+                //    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
+                //}
                 InputHelper.IsImage(request.Image!);
 
                 string image = await _cloundinaryHelper.UploadImage(request.Image!, "van-quyet-mobile/product", "product");
@@ -150,10 +150,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                     return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);
                 }
                 InputHelper.UpdateProductValidate(request);
-                if (!await _dbContext.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
-                {
-                    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
-                }
+                //if (!await _dbContext.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
+                //{
+                //    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
+                //}
 
                 string img;
                 if (request.Image == null || request.Image.Length == 0)

@@ -18,7 +18,7 @@
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
-        public List<ProductType>? ListProductType { get; set; }
+        public List<ProductAttribute>? ListProductAttribute { get; set; }
         public SubCategories? SubCategories { get; set; }
         public List<ProductImage>? ListProductImage { get; set; }
         public List<ProductReview>? ListProductReview { get; set; }
