@@ -1,0 +1,8 @@
+﻿namespace Van_Quyet_Moblie_BackEnd.Handle.Request.ColorRequest
+{
+    public class UpdateColorRequest
+    {
+        public string? Name { get; set; }
+        public string? Value { get; set; }
+    }
+}
