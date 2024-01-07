@@ -6,6 +6,7 @@
         public int ColorID { get; set; }
         public int SizeID { get; set; }
         public int Quantity { get; set; }
+        public double Price { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 

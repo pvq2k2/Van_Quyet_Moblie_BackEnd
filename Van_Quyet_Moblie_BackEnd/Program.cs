@@ -68,6 +68,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<ICategoriesService, CategoriesService>();
 builder.Services.AddTransient<ISubCategoriesService, SubCategoriesService>();
+builder.Services.AddTransient<IColorService, ColorService>();
 builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddTransient<IDecentralizationService, DecentralizationService>();
 builder.Services.AddTransient<IProductImageService, ProductImageService>();
@@ -83,6 +84,7 @@ builder.Services.AddTransient<GHNHelper>();
 builder.Services.AddSingleton<Response>();
 builder.Services.AddSingleton<ResponseObject<AccountDTO>>();
 builder.Services.AddSingleton<ResponseObject<CategoriesDTO>>();
+builder.Services.AddSingleton<ResponseObject<ColorDTO>>();
 builder.Services.AddSingleton<ResponseObject<SubCategoriesDTO>>();
 builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
