@@ -1,5 +1,5 @@
 ﻿using Van_Quyet_Moblie_BackEnd.Entities;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
 
 namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
 {
@@ -9,18 +9,12 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
         {
             return new ProductDTO
             {
-                ProductID = product.ID,
                 Name = product.Name,
                 Price = product.Price,
                 Image = product.Image,
-                Title = product.Title,
                 Discount = product.Discount,
                 Status = product.Status,
                 NumberOfViews = product.NumberOfViews,
-                Height = product.Height,
-                Width = product.Width,
-                Length = product.Length,
-                Weight = product.Weight
             };
         }
 

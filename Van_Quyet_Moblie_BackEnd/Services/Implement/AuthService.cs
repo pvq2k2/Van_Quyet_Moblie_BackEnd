@@ -14,7 +14,6 @@ using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 using Van_Quyet_Moblie_BackEnd.Enums;
-using QuanLyTrungTam_API.Helper;
 using CloudinaryDotNet;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.DataContext;
@@ -185,7 +184,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             catch (Exception ex)
             {
                 await tran.RollbackAsync();
-                throw new Exception(ex.Message);
+                throw new CustomException(StatusCodes.Status500InternalServerError,ex.Message);
             }
         }
         public async Task<ResponseObject<AuthDTO>> ReNewToken(string refreshToken)

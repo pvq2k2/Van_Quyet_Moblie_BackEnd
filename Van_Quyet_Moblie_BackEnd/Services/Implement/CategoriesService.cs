@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using QuanLyTrungTam_API.Helper;
+using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Categories;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.CategoriesRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
-using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Middleware;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 

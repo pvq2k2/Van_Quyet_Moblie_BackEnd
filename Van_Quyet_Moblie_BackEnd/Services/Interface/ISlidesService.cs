@@ -1,5 +1,4 @@
-﻿using QuanLyTrungTam_API.Helper;
-using System;
+﻿using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.SlidesRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
