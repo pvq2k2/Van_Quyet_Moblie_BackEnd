@@ -1,6 +1,4 @@
-﻿using Van_Quyet_Moblie_BackEnd.Entities;
-
-namespace Van_Quyet_Moblie_BackEnd.Helpers
+﻿namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
     public class EmailTemplate
     {

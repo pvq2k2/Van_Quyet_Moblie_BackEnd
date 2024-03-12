@@ -1,5 +1,4 @@
-﻿using Van_Quyet_Moblie_BackEnd.Entities;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+﻿using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 
 namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
 {

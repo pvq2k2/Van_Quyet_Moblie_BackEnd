@@ -1,5 +1,4 @@
-﻿using Azure;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.AuthRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.OrderRequest;
@@ -190,20 +189,20 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
         {
             if (request.Height < 1 || request.Width < 1 || request.Length < 1 || request.Weight < 1)
             {
-                throw new Exception("Chiều cao, rộng, dài và cân nặng phải lớn hơn 0 !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Chiều cao, rộng, dài và cân nặng phải lớn hơn 0 !");
             }
             if (string.IsNullOrWhiteSpace(request.Name)
-                || string.IsNullOrWhiteSpace(request.Title))
+                || string.IsNullOrWhiteSpace(request.Description))
             {
-                throw new Exception("Vui lòng nhập đầy đủ thông tin !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Vui lòng nhập đầy đủ thông tin !");
             }
             if (request.Price < 0)
             {
-                throw new Exception("Vui lòng nhập giá tiền lớn hơn !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Vui lòng nhập giá tiền lớn hơn !");
             }
             if (request.Discount != null && request.Discount < 0)
             {
-                throw new Exception("Vui lòng nhập giảm giá lớn hơn !");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Vui lòng nhập giảm giá lớn hơn !");
             }
 
             return true;
@@ -215,7 +214,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                 throw new Exception("Chiều cao, rộng, dài và cân nặng phải lớn hơn 0 !");
             }
             if (string.IsNullOrWhiteSpace(request.Name)
-                || string.IsNullOrWhiteSpace(request.Title))
+                || string.IsNullOrWhiteSpace(request.Description))
             {
                 throw new Exception("Vui lòng nhập đầy đủ thông tin !");
             }
@@ -254,6 +253,11 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             return string.Join("-", name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLower();
         }
 
+        public static bool RegexColor(string color)
+        {
+            string pattern = @"^(#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})|rgba?\(\s*(\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0(\.\d+)?|1(\.0+)?)\s*)?)?\)|hsla?\(\s*(\d+(\.\d+)?\s*,\s*\d+(\.\d+)?%\s*,\s*\d+(\.\d+)?%\s*(,\s*(0(\.\d+)?|1(\.0+)?)\s*)?)?\))$";
+            return Regex.IsMatch(color, pattern);
+        }
         public static bool RegexUserName(string userName)
         {
             string pattern = @"^[a-z0-9_]+$";

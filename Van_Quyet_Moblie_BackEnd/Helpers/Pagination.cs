@@ -1,4 +1,4 @@
-﻿namespace QuanLyTrungTam_API.Helper
+﻿namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
     public class Pagination
     {

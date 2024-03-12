@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using QuanLyTrungTam_API.Helper;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
@@ -45,6 +44,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             if (string.IsNullOrWhiteSpace(request.Value))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu không được để trống !");
+            }
+            if (!InputHelper.RegexColor(request.Value))
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu phải là hex, rgb và hsl !");
             }
             var color = new Entities.Color
             {
@@ -104,6 +107,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             if (string.IsNullOrWhiteSpace(request.Value))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu không được để trống !");
+            }
+            if (!InputHelper.RegexColor(request.Value))
+            {
+                throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu phải là hex, rgb và hsl !");
             }
             var color = await _dbContext.Color.FirstOrDefaultAsync(x => x.ID == colorID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Màu không tồn tại !");
 

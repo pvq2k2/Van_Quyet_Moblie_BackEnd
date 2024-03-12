@@ -1,5 +1,4 @@
 ﻿using Van_Quyet_Moblie_BackEnd.Entities;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Categories;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.SubCategories;
 
 namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
