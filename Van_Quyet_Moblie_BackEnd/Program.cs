@@ -93,6 +93,7 @@ builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductImageDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductDTO>>();
+builder.Services.AddSingleton<ResponseObject<GetUpdateProductDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductReviewDTO>>();
 builder.Services.AddSingleton<ResponseObject<DecentralizationDTO>>();
 builder.Services.AddSingleton<ResponseObject<CartDTO>>();

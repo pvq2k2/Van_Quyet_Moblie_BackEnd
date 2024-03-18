@@ -5,15 +5,35 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
 {
     public class ProductConverter
     {
+        public GetUpdateProductDTO EntityProductToGetUpdateProductDTO(Product product)
+        {
+            return new GetUpdateProductDTO
+            {
+                ID = product.ID,
+                SubCategoriesID = product.SubCategoriesID,
+                Name = product.Name,
+                Price = product.Price,
+                Image = product.Image,
+                Description = product.Description,
+                Discount = product.Discount,
+                Status = product.Status,
+                Height = product.Height,
+                Width = product.Width,
+                Length = product.Length,
+                Weight = product.Weight,
+            };
+        }
         public ProductDTO EntityProductToDTO(Product product)
         {
             return new ProductDTO
             {
+                ID = product.ID,
                 Name = product.Name,
                 Price = product.Price,
                 Image = product.Image,
                 Discount = product.Discount,
                 Status = product.Status,
+                Slug = product.Slug,
                 NumberOfViews = product.NumberOfViews,
             };
         }

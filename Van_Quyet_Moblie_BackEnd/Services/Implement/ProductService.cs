@@ -4,8 +4,6 @@ using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Enums;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
-using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductAttributeRequest;
-using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductImageRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
@@ -19,15 +17,19 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         private readonly ProductConverter _productConverter;
         private readonly Response _response;
         private readonly AppDbContext _dbContext;
+        private readonly TokenHelper _tokenHelper;
         private readonly ResponseObject<ProductDTO> _responseProduct;
+        private readonly ResponseObject<GetUpdateProductDTO> _responseGetUpdateProductDTO;
         private readonly CloudinaryHelper _cloundinaryHelper;
-        public ProductService(AppDbContext dbContext, ResponseObject<ProductDTO> responseProduct, CloudinaryHelper cloudinaryHelper, Response response)
+        public ProductService(AppDbContext dbContext, ResponseObject<ProductDTO> responseProduct, CloudinaryHelper cloudinaryHelper, Response response, ResponseObject<GetUpdateProductDTO> responseGetUpdateProductDTO, TokenHelper tokenHelper)
         {
             _productConverter = new ProductConverter();
             _dbContext = dbContext;
             _responseProduct = responseProduct;
             _cloundinaryHelper = cloudinaryHelper;
             _response = response;
+            _responseGetUpdateProductDTO = responseGetUpdateProductDTO;
+            _tokenHelper = tokenHelper;
         }
 
         #region Private Function
@@ -39,51 +41,19 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 throw new CustomException(StatusCodes.Status404NotFound, "Danh mục không tồn tại !");
             }
         }
+        private void IsAdmin()
+        {
+            _tokenHelper.IsToken();
+            string role = _tokenHelper.GetRole();
+            if (role != "Admin")
+            {
+                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
+            }
+        }
         private async Task<string> UploadAndValidateImage(IFormFile image, string folderPath, string fileName)
         {
             InputHelper.IsImage(image);
             return await _cloundinaryHelper.UploadImage(image, folderPath, fileName);
-        }
-        private async Task ValidateProductImage(CreateProductImageRequest item)
-        {
-            if (string.IsNullOrEmpty(item.Title))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Tên ảnh không được để trống !");
-            }
-
-            if (item.ColorID > 0)
-            {
-                await ValidateColor(item.ColorID);
-            }
-        }
-        private async Task ValidateColor(int colorId)
-        {
-            if (!await _dbContext.Color.AnyAsync(x => x.ID == colorId))
-            {
-                throw new CustomException(StatusCodes.Status404NotFound, "Màu không tồn tại !");
-            }
-        }
-        private async Task ValidateProductAttribute(CreateProductAttributeRequest item)
-        {
-            if (item.Quantity < 1)
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Số lượng không được nhỏ hơn 1 !");
-            }
-
-            if (item.Price < 1)
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Giá không được nhỏ hơn 1 !");
-            }
-
-            await ValidateColor(item.ColorID);
-            await ValidateSize(item.SizeID);
-        }
-        private async Task ValidateSize(int sizeId)
-        {
-            if (!await _dbContext.Size.AnyAsync(x => x.ID == sizeId))
-            {
-                throw new CustomException(StatusCodes.Status404NotFound, "Kích cỡ không tồn tại !");
-            }
         }
         private async Task<Product> IsProductExist(int productID)
         {
@@ -93,10 +63,12 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         #endregion
         private static Product CreateProductObject(CreateProductRequest request, string image)
         {
+            string slug = InputHelper.CreateSlug(request.Name!);
             return new Product
             {
                 Name = request.Name,
                 Price = request.Price,
+                Slug = slug,
                 Image = image,
                 Discount = request.Discount,
                 Description = request.Description,
@@ -108,91 +80,17 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
                 Status = (int)Status.Active,
             };
         }
-        private async Task ProcessProductImages(List<CreateProductImageRequest> productImages, int productId, List<string> listImageTemp)
-        {
-            if (productImages != null && productImages.Any())
-            {
-                foreach (var item in productImages)
-                {
-                    await ValidateProductImage(item);
-
-                    string img = await _cloundinaryHelper.UploadImage(item.Image!, "van-quyet-mobile/product-image", "product-image");
-                    listImageTemp.Add(img);
-
-                    var productImage = new ProductImage
-                    {
-                        Title = item.Title,
-                        Image = img,
-                        ProductID = productId,
-                        ColorID = item.ColorID,
-                        Status = (int)Status.Active
-                    };
-
-                    await _dbContext.ProductImage.AddAsync(productImage);
-                }
-
-                await _dbContext.SaveChangesAsync();
-            }
-        }
-        private async Task ProcessProductAttributes(List<CreateProductAttributeRequest> productAttributes, int productId)
-        {
-            if (productAttributes != null && productAttributes.Any())
-            {
-                var listProductAttribute = new List<ProductAttribute>();
-
-                foreach (var item in productAttributes)
-                {
-                    await ValidateProductAttribute(item);
-
-                    var productAttribute = new ProductAttribute
-                    {
-                        ProductID = productId,
-                        SizeID = item.SizeID,
-                        ColorID = item.ColorID,
-                        Quantity = item.Quantity,
-                        Price = item.Price,
-                    };
-
-                    listProductAttribute.Add(productAttribute);
-                }
-
-                await _dbContext.ProductAttribute.AddRangeAsync(listProductAttribute);
-                await _dbContext.SaveChangesAsync();
-            }
-        }
         #endregion
         public async Task<Response> CreateProduct(CreateProductRequest request)
         {
-            var listImageTemp = new List<string>();
-            using var transaction = _dbContext.Database.BeginTransaction();
-            try
-            {
+                IsAdmin();
                 InputHelper.CreateProductValidate(request);
                 await ValidateSubCategory(request.SubCategoriesID);
                 string image = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
-                listImageTemp.Add(image);
                 var product = CreateProductObject(request, image);
                 await _dbContext.Product.AddAsync(product);
                 await _dbContext.SaveChangesAsync();
-
-                await ProcessProductImages(request.ListProductImage!, product.ID, listImageTemp);
-                await ProcessProductAttributes(request.ListProductAttribute!, product.ID);
-
-                await transaction.CommitAsync();
                 return _response.ResponseSuccess("Tạo sản phẩm thành công !");
-            }
-            catch (Exception ex)
-            {
-                if (listImageTemp.Count > 0)
-                {
-                    foreach (var item in listImageTemp)
-                    {
-                        await _cloundinaryHelper.DeleteImageByUrl(item);
-                    }
-                }
-                await transaction.RollbackAsync();
-                throw new CustomException(StatusCodes.Status500InternalServerError, ex.Message);
-            }
         }
 
         public async Task<PageResult<ProductDTO>> GetAllProduct(Pagination pagination)
@@ -221,12 +119,14 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<ProductDTO>> GetProductByID(int productID)
         {
-            var product = await _dbContext.Product.FirstOrDefaultAsync(x => x.ID == productID);
-            if (product == null)
-            {
-                return _responseProduct.ResponseError(StatusCodes.Status400BadRequest, "Sản phẩm không tồn tại !", null!);
-            }
+            var product = await IsProductExist(productID);
             return _responseProduct.ResponseSuccess("Thành công !", _productConverter.EntityProductToDTO(product));
+        }
+        public async Task<ResponseObject<GetUpdateProductDTO>> GetUpdateProductByID(int productID)
+        {
+            IsAdmin();
+            var product = await IsProductExist(productID);
+            return _responseGetUpdateProductDTO.ResponseSuccess("Thành công !", _productConverter.EntityProductToGetUpdateProductDTO(product));
         }
 
         public async Task<ResponseObject<ProductDTO>> GetProductByIDAndUpdateView(int productID)
@@ -266,44 +166,39 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<ProductDTO>> UpdateProduct(int productID, UpdateProductRequest request)
         {
-            try
+            IsAdmin();
+            var product = await IsProductExist(productID);
+            InputHelper.UpdateProductValidate(request);
+            await ValidateSubCategory(request.SubCategoriesID);
+
+            string img;
+            if (request.Image == null || request.Image.Length == 0)
             {
-                var product = await IsProductExist(productID);
-                InputHelper.UpdateProductValidate(request);
-                //if (!await _dbContext.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
-                //{
-                //    return _responseProduct.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
-                //}
-
-                string img;
-                if (request.Image == null || request.Image.Length == 0)
-                {
-                    img = product.Image!;
-                }
-                else
-                {
-                    InputHelper.IsImage(request.Image!);
-                    img = await _cloundinaryHelper.UploadImage(request.Image, "van-quyet-mobile/product", "product");
-                    await _cloundinaryHelper.DeleteImageByUrl(product.Image!);
-                }
-
-                product.Name = request.Name;
-                product.Price = request.Price;
-                product.Description = request.Description;
-                product.Image = img;
-                product.Discount = request.Discount;
-                product.Status = request.Status;
-                product.UpdatedAt = DateTime.Now;
-
-                _dbContext.Product.Update(product);
-                await _dbContext.SaveChangesAsync();
-
-                return _responseProduct.ResponseSuccess("Cập nhật sản phẩm thành công !", _productConverter.EntityProductToDTO(product));
+                img = product.Image!;
             }
-            catch (Exception e)
+            else
             {
-                return _responseProduct.ResponseError(StatusCodes.Status500InternalServerError, e.Message, null!);
+                img = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
+                await _cloundinaryHelper.DeleteImageByUrl(product.Image!);
             }
+
+            product.Name = request.Name;
+            product.Price = request.Price;
+            product.Description = request.Description;
+            product.Image = img;
+            product.Discount = request.Discount;
+            product.Status = request.Status;
+            product.SubCategoriesID = request.SubCategoriesID;
+            product.Height = request.Height;
+            product.Width = request.Width;
+            product.Length = request.Length;
+            product.Weight = request.Weight;
+            product.UpdatedAt = DateTime.Now;
+
+            _dbContext.Product.Update(product);
+            await _dbContext.SaveChangesAsync();
+
+            return _responseProduct.ResponseSuccess("Cập nhật sản phẩm thành công !", _productConverter.EntityProductToDTO(product));
         }
     }
 }
