@@ -13,6 +13,7 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
                 Image = subCategories.Image,
                 Name = subCategories.Name,
                 Slug = subCategories.Slug,
+                CategoriesID = subCategories.CategoriesID,
             };
         }
 

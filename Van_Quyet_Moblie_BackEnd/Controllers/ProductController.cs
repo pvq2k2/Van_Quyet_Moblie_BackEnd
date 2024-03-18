@@ -22,10 +22,16 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.GetAllProduct(pagination));
         }
 
-        [HttpGet("get-product-by-id")]
-        public async Task<IActionResult> GetProductByID(int productID)
+        [HttpGet("get-product-by-id/{productID}")]
+        public async Task<IActionResult> GetProductByID([FromRoute] int productID)
         {
             return Ok(await _iProductService.GetProductByID(productID));
+        }
+
+        [HttpGet("get-update-product-by-id/{productID}")]
+        public async Task<IActionResult> GetUpdateProductByID([FromRoute] int productID)
+        {
+            return Ok(await _iProductService.GetUpdateProductByID(productID));
         }
 
         [HttpGet("get-product-by-id-and-update-view")]
@@ -52,8 +58,8 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.CreateProduct(request));
         }
 
-        [HttpPut("update-product")]
-        public async Task<IActionResult> UpdateProduct(int productID, [FromForm] UpdateProductRequest request)
+        [HttpPut("update-product/{productID}")]
+        public async Task<IActionResult> UpdateProduct([FromRoute] int productID, [FromForm] UpdateProductRequest request)
         {
             return Ok(await _iProductService.UpdateProduct(productID, request));
         }
