@@ -1,15 +1,27 @@
 ﻿using Van_Quyet_Moblie_BackEnd.Entities;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductImage;
 
 namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
 {
     public class ProductImageConverter
     {
+        public GetUpdateProductImageDTO EntityProductImageToGetUpdateProductImageDTO(ProductImage productImage)
+        {
+            return new GetUpdateProductImageDTO
+            {
+                ID = productImage.ID,
+                Title = productImage.Title,
+                Image = productImage.Image,
+                ProductID = productImage.ID,
+                ColorID = productImage.ColorID,
+                Status = productImage.Status,
+            };
+        }
         public ProductImageDTO EntityProductImageToDTO(ProductImage productImage)
         {
             return new ProductImageDTO
             {
-                ProductImageID = productImage.ID,
+                ID = productImage.ID,
                 Title = productImage.Title,
                 Image = productImage.Image,
                 Status = productImage.Status

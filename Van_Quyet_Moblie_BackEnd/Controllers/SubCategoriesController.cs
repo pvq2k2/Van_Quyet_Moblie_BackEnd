@@ -17,7 +17,7 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
         }
 
         [HttpPost("get-all-sub-categories/{categoriesID}")]
-        public async Task<IActionResult> GetAllSubCategories(Pagination pagination, int categoriesID)
+        public async Task<IActionResult> GetAllSubCategories(Pagination pagination, [FromRoute] int categoriesID)
         {
             return Ok(await _iSubCategoriesService.GetAllSubCategories(pagination, categoriesID));
         }

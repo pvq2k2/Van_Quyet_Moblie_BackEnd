@@ -29,7 +29,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _response = response;
             _responseSize = responseSize;
         }
-        public async Task<Response> CreateSize(CreateSizeRequest request)
+        #region Validate
+        private void IsAdmin()
         {
             _tokenHelper.IsToken();
             string role = _tokenHelper.GetRole();
@@ -37,14 +38,28 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
             }
-            if (string.IsNullOrWhiteSpace(request.Name))
+        }
+        private static void ValidateSize(string name, string value)
+        {
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Tên kích cỡ không được để trống !");
             }
-            if (string.IsNullOrWhiteSpace(request.Value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị kích cỡ không được để trống !");
             }
+        }
+        private async Task<Entities.Size> IsSizeExist(int sizeID)
+        {
+            var size = await _dbContext.Size.FirstOrDefaultAsync(x => x.ID == sizeID);
+            return size ?? throw new CustomException(StatusCodes.Status404NotFound, "Kích cỡ không tồn tại !");
+        }
+        #endregion
+        public async Task<Response> CreateSize(CreateSizeRequest request)
+        {
+            IsAdmin();
+            ValidateSize(request.Name!, request.Value!);
             var size = new Entities.Size
             {
                 Name = request.Name,
@@ -57,13 +72,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<PageResult<SizeDTO>> GetAllSize(Pagination pagination)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
+            IsAdmin();
 
             var query = _dbContext.Size.OrderByDescending(x => x.ID).AsQueryable();
 
@@ -77,34 +86,17 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<SizeDTO>> GetSizeByID(int sizeID)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            var size = await _dbContext.Size.FirstOrDefaultAsync(x => x.ID == sizeID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Kích cỡ không tồn tại !");
+            IsAdmin();
+            var size = await IsSizeExist(sizeID);
 
             return _responseSize.ResponseSuccess("Thành công !", _sizeConverter.EntitySizeToDTO(size));
         }
 
         public async Task<Response> UpdateSize(int sizeID, UpdateSizeRequest request)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Tên kích cỡ không được để trống !");
-            }
-            if (string.IsNullOrWhiteSpace(request.Value))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị kích cỡ không được để trống !");
-            }
-            var size = await _dbContext.Size.FirstOrDefaultAsync(x => x.ID == sizeID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Kích cỡ không tồn tại !");
+            IsAdmin();
+            ValidateSize(request.Name!, request.Value!);
+            var size = await IsSizeExist(sizeID);
 
             size.Name = request.Name;
             size.Value = request.Value;

@@ -29,7 +29,9 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _response = response;
             _responseColor = responseColor;
         }
-        public async Task<Response> CreateColor(CreateColorRequest request)
+
+        #region Validate
+        private void IsAdmin()
         {
             _tokenHelper.IsToken();
             string role = _tokenHelper.GetRole();
@@ -37,18 +39,32 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
             }
-            if (string.IsNullOrWhiteSpace(request.Name))
+        }
+        private static void ValidateColor(string name, string value)
+        {
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Tên màu không được để trống !");
             }
-            if (string.IsNullOrWhiteSpace(request.Value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu không được để trống !");
             }
-            if (!InputHelper.RegexColor(request.Value))
+            if (!InputHelper.RegexColor(value))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu phải là hex, rgb và hsl !");
             }
+        }
+        private async Task<Entities.Color> IsColorExist(int colorID)
+        {
+            var color = await _dbContext.Color.FirstOrDefaultAsync(x => x.ID == colorID);
+            return color ?? throw new CustomException(StatusCodes.Status404NotFound, "Màu không tồn tại !");
+        }
+        #endregion
+        public async Task<Response> CreateColor(CreateColorRequest request)
+        {
+            IsAdmin();
+            ValidateColor(request.Name!, request.Value!);
             var color = new Entities.Color
             {
                 Name = request.Name,
@@ -61,58 +77,30 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<PageResult<ColorDTO>> GetAllColor(Pagination pagination)
         {
-                _tokenHelper.IsToken();
-                string role = _tokenHelper.GetRole();
+            IsAdmin();
 
-                if (role != "Admin")
-                {
-                    throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-                }
+            var query = _dbContext.Color.OrderByDescending(x => x.ID).AsQueryable();
 
-                var query = _dbContext.Color.OrderByDescending(x => x.ID).AsQueryable();
+            pagination.TotalCount = await query.CountAsync();
+            var result = PageResult<Entities.Color>.ToPageResult(pagination, query);
 
-                pagination.TotalCount = await query.CountAsync();
-                var result = PageResult<Entities.Color>.ToPageResult(pagination, query);
+            var list = result.ToList();
 
-                var list = result.ToList();
-
-                return new PageResult<ColorDTO>(pagination, _colorConverter.ListEntityColorToDTO(result.ToList()));
+            return new PageResult<ColorDTO>(pagination, _colorConverter.ListEntityColorToDTO(result.ToList()));
         }
 
         public async Task<ResponseObject<ColorDTO>> GetColorByID(int colorID)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            var color = await _dbContext.Color.FirstOrDefaultAsync(x => x.ID == colorID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Màu không tồn tại !");
-
+            IsAdmin();
+            var color = await IsColorExist(colorID);
             return _responseColor.ResponseSuccess("Thành công !", _colorConverter.EntityColorToDTO(color));
         }
 
         public async Task<Response> UpdateColor(int colorID, UpdateColorRequest request)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Tên màu không được để trống !");
-            }
-            if (string.IsNullOrWhiteSpace(request.Value))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu không được để trống !");
-            }
-            if (!InputHelper.RegexColor(request.Value))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Giá trị màu phải là hex, rgb và hsl !");
-            }
-            var color = await _dbContext.Color.FirstOrDefaultAsync(x => x.ID == colorID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Màu không tồn tại !");
+            IsAdmin();
+            ValidateColor(request.Name!, request.Value!);
+            var color = await IsColorExist(colorID);
 
             color.Name = request.Name;
             color.Value = request.Value;

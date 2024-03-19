@@ -33,7 +33,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _tokenHelper = tokenHelper;
             _response = response;
         }
-        public async Task<Response> CreateSubCategories(CreateSubCategoriesRequest request)
+        #region Validate
+        private void IsAdmin()
         {
             _tokenHelper.IsToken();
             string role = _tokenHelper.GetRole();
@@ -41,23 +42,45 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             {
                 throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
             }
-            if (string.IsNullOrWhiteSpace(request.Name))
+        }
+        private static void ValidateSubCategory(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new CustomException(StatusCodes.Status400BadRequest, "Tên danh mục không được để trống !");
             }
-            if (!await _dbContext.Categories.AnyAsync(x => x.ID == request.CategoriesID))
+        }
+        private async Task IsCategoryExist(int categoryID)
+        {
+            if (!await _dbContext.Categories.AnyAsync(x => x.ID == categoryID))
             {
                 throw new CustomException(StatusCodes.Status404NotFound, "Danh mục cha không tồn tại !");
             }
-            InputHelper.IsImage(request.Image!);
+        }
+        private async Task<string> UploadAndValidateImage(IFormFile image, string folderPath, string fileName)
+        {
+            InputHelper.IsImage(image);
+            return await _cloudinaryHelper.UploadImage(image, folderPath, fileName);
+        }
+        private async Task<SubCategories> IsSubCategoryExist(int subCategoryID)
+        {
+            var subCategory = await _dbContext.SubCategories.FirstOrDefaultAsync(x => x.ID == subCategoryID);
+            return subCategory ?? throw new CustomException(StatusCodes.Status404NotFound, "Danh mục không tồn tại !");
+        }
+        #endregion
+        public async Task<Response> CreateSubCategories(CreateSubCategoriesRequest request)
+        {
+            IsAdmin();
+            ValidateSubCategory(request.Name!);
+            await IsCategoryExist(request.CategoriesID);
 
-            string image = await _cloudinaryHelper.UploadImage(request.Image!, $"van-quyet-mobile/sub-categories", "sub-ct");
+            string image = await UploadAndValidateImage(request.Image!, $"van-quyet-mobile/sub-categories", "sub-ct");
             var subCategories = new SubCategories
             {
                 Name = request.Name,
                 Image = image,
                 CategoriesID = request.CategoriesID,
-                Slug = InputHelper.CreateSlug(request.Name)
+                Slug = InputHelper.CreateSlug(request.Name!)
             };
 
             await _dbContext.SubCategories.AddAsync(subCategories);
@@ -68,13 +91,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<PageResult<SubCategoriesDTO>> GetAllSubCategories(Pagination pagination, int categoriesID)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
+            IsAdmin();
+            await IsCategoryExist(categoriesID);
 
             var query = _dbContext.SubCategories.Where(x => x.CategoriesID == categoriesID).AsQueryable();
 
@@ -88,34 +106,18 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<SubCategoriesDTO>> GetSubCategoriesByID(int subCategoriesID)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            var subCategories = await _dbContext.SubCategories.FirstOrDefaultAsync(x => x.ID == subCategoriesID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Danh mục không tồn tại !");
+            IsAdmin();
+            var subCategories = await IsSubCategoryExist(subCategoriesID);
 
             return _responseSubCategories.ResponseSuccess("Thành công !", _subCategoriesConverter.EntitySubCategoriesToDTO(subCategories));
         }
 
         public async Task<Response> UpdateSubCategories(int subCategoriesID, UpdateSubCategoriesRequest request)
         {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Tên danh mục không được để trống !");
-            }
-            if (!await _dbContext.Categories.AnyAsync(x => x.ID == request.CategoriesID))
-            {
-                throw new CustomException(StatusCodes.Status404NotFound, "Danh mục cha không tồn tại !");
-            }
-            var subCategories = await _dbContext.SubCategories.FirstOrDefaultAsync(x => x.ID == subCategoriesID) ?? throw new CustomException(StatusCodes.Status404NotFound, "Danh mục không tồn tại !");
+            IsAdmin();
+            ValidateSubCategory(request.Name!);
+            await IsCategoryExist(request.CategoriesID);
+            var subCategories = await IsSubCategoryExist(subCategoriesID);
 
             string img;
             if (request.Image == null || request.Image.Length == 0)
@@ -124,8 +126,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             }
             else
             {
-                InputHelper.IsImage(request.Image!);
-                img = await _cloudinaryHelper.UploadImage(request.Image!, $"van-quyet-mobile/sub-categories", "sub-ct");
+                img = await UploadAndValidateImage(request.Image!, $"van-quyet-mobile/sub-categories", "sub-ct");
                 await _cloudinaryHelper.DeleteImageByUrl(subCategories.Image!);
             }
 
@@ -133,7 +134,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             subCategories.Name = request.Name;
             subCategories.Image = img;
             subCategories.CategoriesID = request.CategoriesID;
-            subCategories.Slug = InputHelper.CreateSlug(request.Name);
+            subCategories.Slug = InputHelper.CreateSlug(request.Name!);
             subCategories.UpdatedAt = DateTime.Now;
 
             _dbContext.SubCategories.Update(subCategories);
