@@ -19,16 +19,16 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         private readonly AppDbContext _dbContext;
         private readonly TokenHelper _tokenHelper;
         private readonly ResponseObject<ProductDTO> _responseProduct;
-        private readonly ResponseObject<GetUpdateProductDTO> _responseGetUpdateProductDTO;
-        private readonly CloudinaryHelper _cloundinaryHelper;
-        public ProductService(AppDbContext dbContext, ResponseObject<ProductDTO> responseProduct, CloudinaryHelper cloudinaryHelper, Response response, ResponseObject<GetUpdateProductDTO> responseGetUpdateProductDTO, TokenHelper tokenHelper)
+        private readonly ResponseObject<GetUpdateProductDTO> _responseGetUpdateProduct;
+        private readonly CloudinaryHelper _cloudinaryHelper;
+        public ProductService(AppDbContext dbContext, ResponseObject<ProductDTO> responseProduct, CloudinaryHelper cloudinaryHelper, Response response, ResponseObject<GetUpdateProductDTO> responseGetUpdateProduct, TokenHelper tokenHelper)
         {
             _productConverter = new ProductConverter();
             _dbContext = dbContext;
             _responseProduct = responseProduct;
-            _cloundinaryHelper = cloudinaryHelper;
+            _cloudinaryHelper = cloudinaryHelper;
             _response = response;
-            _responseGetUpdateProductDTO = responseGetUpdateProductDTO;
+            _responseGetUpdateProduct = responseGetUpdateProduct;
             _tokenHelper = tokenHelper;
         }
 
@@ -53,12 +53,12 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         private async Task<string> UploadAndValidateImage(IFormFile image, string folderPath, string fileName)
         {
             InputHelper.IsImage(image);
-            return await _cloundinaryHelper.UploadImage(image, folderPath, fileName);
+            return await _cloudinaryHelper.UploadImage(image, folderPath, fileName);
         }
         private async Task<Product> IsProductExist(int productID)
         {
             var product = await _dbContext.Product.FirstOrDefaultAsync(x => x.ID == productID);
-            return product ?? throw new CustomException(StatusCodes.Status400BadRequest, "Sản phẩm không tồn tại !");
+            return product ?? throw new CustomException(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !");
         }
         #endregion
         private static Product CreateProductObject(CreateProductRequest request, string image)
@@ -126,7 +126,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             IsAdmin();
             var product = await IsProductExist(productID);
-            return _responseGetUpdateProductDTO.ResponseSuccess("Thành công !", _productConverter.EntityProductToGetUpdateProductDTO(product));
+            return _responseGetUpdateProduct.ResponseSuccess("Thành công !", _productConverter.EntityProductToGetUpdateProductDTO(product));
         }
 
         public async Task<ResponseObject<ProductDTO>> GetProductByIDAndUpdateView(int productID)
@@ -164,7 +164,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             return response.ResponseSuccess("Xóa sản phẩm thành công !", null!);
         }
 
-        public async Task<ResponseObject<ProductDTO>> UpdateProduct(int productID, UpdateProductRequest request)
+        public async Task<Response> UpdateProduct(int productID, UpdateProductRequest request)
         {
             IsAdmin();
             var product = await IsProductExist(productID);
@@ -179,7 +179,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             else
             {
                 img = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
-                await _cloundinaryHelper.DeleteImageByUrl(product.Image!);
+                await _cloudinaryHelper.DeleteImageByUrl(product.Image!);
             }
 
             product.Name = request.Name;
@@ -198,7 +198,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             _dbContext.Product.Update(product);
             await _dbContext.SaveChangesAsync();
 
-            return _responseProduct.ResponseSuccess("Cập nhật sản phẩm thành công !", _productConverter.EntityProductToDTO(product));
+            return _response.ResponseSuccess("Cập nhật sản phẩm thành công !");
         }
     }
 }
