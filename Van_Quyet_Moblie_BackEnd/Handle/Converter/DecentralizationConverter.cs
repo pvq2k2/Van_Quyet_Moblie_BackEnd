@@ -8,7 +8,7 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
         public DecentralizationDTO EntityDecentralizationToDTO(Decentralization decentralization)
         {
             return new DecentralizationDTO { 
-                DecentralizationID = decentralization.ID,
+                ID = decentralization.ID,
                 Name = decentralization.Name,
             };
         }

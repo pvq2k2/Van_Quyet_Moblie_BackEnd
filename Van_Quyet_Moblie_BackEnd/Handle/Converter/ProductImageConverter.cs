@@ -12,7 +12,7 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
                 ID = productImage.ID,
                 Title = productImage.Title,
                 Image = productImage.Image,
-                ProductID = productImage.ID,
+                ProductID = productImage.ProductID,
                 ColorID = productImage.ColorID,
                 Status = productImage.Status,
             };
