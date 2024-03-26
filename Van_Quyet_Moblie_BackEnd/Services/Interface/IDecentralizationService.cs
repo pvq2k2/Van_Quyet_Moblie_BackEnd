@@ -9,8 +9,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Interface
     {
         public Task<PageResult<DecentralizationDTO>> GetAllDecentralization(Pagination pagination);
         public Task<ResponseObject<DecentralizationDTO>> GetDecentralizationByID(int decentralizationID);
-        public Task<ResponseObject<DecentralizationDTO>> CreateDecentralization(CreateDecentralizationRequest request);
-        public Task<ResponseObject<DecentralizationDTO>> UpdateDecentralization(int decentralizationID, UpdateDecentralizationRequest request);
-        public Task<ResponseObject<string>> RemoveDecentralization(int decentralizationID);
+        public Task<Response> CreateDecentralization(CreateDecentralizationRequest request);
+        public Task<Response> UpdateDecentralization(int decentralizationID, UpdateDecentralizationRequest request);
+        public Task<Response> RemoveDecentralization(int decentralizationID);
     }
 }

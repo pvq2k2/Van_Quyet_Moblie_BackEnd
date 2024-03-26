@@ -29,13 +29,13 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
         }
 
         [HttpPost("create-product-attribute")]
-        public async Task<IActionResult> CreateProductAttribute([FromForm] CreateProductAttributeRequest request)
+        public async Task<IActionResult> CreateProductAttribute(CreateProductAttributeRequest request)
         {
             return Ok(await _iProductAttributeService.CreateProductAttribute(request));
         }
 
         [HttpPut("update-product-attribute/{productAttributeID}")]
-        public async Task<IActionResult> UpdateProductAttribute([FromRoute] int productAttributeID, [FromForm] UpdateProductAttributeRequest request)
+        public async Task<IActionResult> UpdateProductAttribute([FromRoute] int productAttributeID, UpdateProductAttributeRequest request)
         {
             return Ok(await _iProductAttributeService.UpdateProductAttribute(productAttributeID, request));
         }

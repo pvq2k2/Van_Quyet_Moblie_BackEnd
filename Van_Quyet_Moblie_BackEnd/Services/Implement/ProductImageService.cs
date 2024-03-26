@@ -154,6 +154,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             productImage.Title = request.Title;
             productImage.Image = img;
             productImage.ProductID = request.ProductID;
+            productImage.ColorID = request.ColorID;
             productImage.Status = request.Status;
             productImage.UpdatedAt = DateTime.Now;
 
