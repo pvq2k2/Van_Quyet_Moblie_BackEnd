@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.AuthRequest;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
@@ -57,28 +56,10 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iAuthService.ChangePassword(request));
         }
 
-        [HttpPost("get-all-account")]
-        public async Task<IActionResult> GetAllAccount(Pagination pagination)
-        {
-            return Ok(await _iAuthService.GetAllAccount(pagination));
-        }
-
-        [HttpGet("get-account-by-id/{accountID}")]
-        public async Task<IActionResult> GetAccountByID([FromRoute] int accountID)
-        {
-            return Ok(await _iAuthService.GetAccountByID(accountID));
-        }
-
         [HttpPost("change-information")]
         public async Task<IActionResult> ChangeInformation([FromForm]ChangeInformationRequest request)
         {
             return Ok(await _iAuthService.ChangeInformation(request));
-        }
-
-        [HttpPatch("change-status")]
-        public async Task<IActionResult> ChangeStatus(int accountID, int status)
-        {
-            return Ok(await _iAuthService.ChangeStatus(accountID, status));
         }
     }
 }
