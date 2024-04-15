@@ -13,6 +13,7 @@ using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductAttribute;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductImage;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.SubCategories;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.User;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Middleware;
@@ -69,6 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddTransient<IAuthService, AuthService>();
+builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ICategoriesService, CategoriesService>();
 builder.Services.AddTransient<ISubCategoriesService, SubCategoriesService>();
 builder.Services.AddTransient<IColorService, ColorService>();
@@ -87,7 +89,6 @@ builder.Services.AddTransient<GHNHelper>();
 
 
 builder.Services.AddSingleton<Response>();
-builder.Services.AddSingleton<ResponseObject<AccountDTO>>();
 builder.Services.AddSingleton<ResponseObject<CategoriesDTO>>();
 builder.Services.AddSingleton<ResponseObject<ColorDTO>>();
 builder.Services.AddSingleton<ResponseObject<SizeDTO>>();
@@ -96,6 +97,7 @@ builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductImageDTO>>();
 builder.Services.AddSingleton<ResponseObject<GetUpdateProductImageDTO>>();
+builder.Services.AddSingleton<ResponseObject<GetUpdateUserDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductAttributeDTO>>();
 builder.Services.AddSingleton<ResponseObject<GetUpdateProductAttributeDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductDTO>>();

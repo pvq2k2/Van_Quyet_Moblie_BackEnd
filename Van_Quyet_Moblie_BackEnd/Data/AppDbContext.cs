@@ -7,6 +7,7 @@ namespace Van_Quyet_Moblie_BackEnd.DataContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options) { }
         public DbSet<Account> Account { get; set; }
+        public DbSet<Address> Address { get; set; }
         public DbSet<Cart> Cart { get; set; }
         public DbSet<CartItem> CartItem { get; set; }
         public DbSet<Categories> Categories { get; set; }

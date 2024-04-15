@@ -34,7 +34,7 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iDecentralizationService.CreateDecentralization(request));
         }
 
-        [HttpPatch("update-decentralization/{decentralizationID}")]
+        [HttpPut("update-decentralization/{decentralizationID}")]
         public async Task<IActionResult> UpdateDecentralization([FromRoute] int decentralizationID, UpdateDecentralizationRequest request)
         {
             return Ok(await _iDecentralizationService.UpdateDecentralization(decentralizationID, request));

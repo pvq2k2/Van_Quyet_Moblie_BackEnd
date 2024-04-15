@@ -8,14 +8,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Van_Quyet_Moblie_BackEnd.Entities;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.AuthRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 using Van_Quyet_Moblie_BackEnd.Enums;
 using CloudinaryDotNet;
-using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Middleware;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Auth;
@@ -24,9 +22,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
     public class AuthService : IAuthService
     {
-        private readonly AuthConverter _authConverter;
         private readonly AppDbContext _dbContext;
-        private readonly ResponseObject<AccountDTO> _responseAccount;
         private readonly ResponseObject<AuthDTO> _responseAuth;
         private readonly IConfiguration _configuration;
         private readonly CloudinaryHelper _cloudinaryHelper;
@@ -34,16 +30,13 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         private readonly Response _response;
 
         public AuthService(AppDbContext dbContext,
-            ResponseObject<AccountDTO> responseAccount,
             ResponseObject<AuthDTO> responseAuth,
             IConfiguration configuration,
             CloudinaryHelper cloudinaryHelper,
             TokenHelper tokenHelper,
             Response response)
         {
-            _authConverter = new AuthConverter();
             _dbContext = dbContext;
-            _responseAccount = responseAccount;
             _responseAuth = responseAuth;
             _configuration = configuration;
             _cloudinaryHelper = cloudinaryHelper;
@@ -184,7 +177,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             catch (Exception ex)
             {
                 await tran.RollbackAsync();
-                throw new CustomException(StatusCodes.Status500InternalServerError,ex.Message);
+                throw new CustomException(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
         public async Task<ResponseObject<AuthDTO>> ReNewToken(string refreshToken)
@@ -226,7 +219,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             var user = await _dbContext.User.FirstOrDefaultAsync(x => x.Email == request.Email)
                 ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == user.AccountID) 
+            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == user.AccountID)
                 ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
             if (!BCrypt.Net.BCrypt.Verify(request.Password, account.Password))
             {
@@ -335,31 +328,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
             return _response.ResponseSuccess("Thay đổi mật khẩu thành công !");
         }
-        public async Task<PageResult<AccountDTO>> GetAllAccount(Pagination pagination)
-        {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-
-            var query = _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).OrderByDescending(x => x.ID).AsQueryable();
-
-            var result = PageResult<Entities.Account>.ToPageResult(pagination, query);
-            pagination.TotalCount = await query.CountAsync();
-
-            var list = result.ToList();
-
-            return new PageResult<AccountDTO>(pagination, _authConverter.ListEntityAccountToDTO(result.ToList()));
-        }
-        public async Task<ResponseObject<AccountDTO>> GetAccountByID(int accountID)
-        {
-            var account = await _dbContext.Account.Include(x => x.User).Include(x => x.Decentralization).FirstOrDefaultAsync(x => x.ID == accountID)
-                ?? throw new CustomException(StatusCodes.Status404NotFound, $"Tài khoản có ID {accountID} không tồn tại !");
-            return _responseAccount.ResponseSuccess("Thành Công !", _authConverter.EntityAccountToDTO(account));
-        }
         public async Task<ResponseObject<AuthDTO>> ChangeInformation(ChangeInformationRequest request)
         {
             InputHelper.ChangeInformationValidate(request);
@@ -402,7 +370,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             account.User.Email = request.Email;
             account.User.Avatar = avatar;
             account.User.Gender = request.Gender;
-            account.User.Address = request.Address;
             account.User.UpdatedAt = DateTime.Now;
             account.UpdatedAt = DateTime.Now;
 
@@ -444,29 +411,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             };
 
             return _responseAuth.ResponseSuccess("Cập nhật thông tin thành công !", responseAccount);
-        }
-        public async Task<Response> ChangeStatus(int accountID, int status)
-        {
-            _tokenHelper.IsToken();
-            string role = _tokenHelper.GetRole();
-
-            if (role != "Admin")
-            {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
-            }
-            var account = await _dbContext.Account.FirstOrDefaultAsync(x => x.ID == accountID)
-                ?? throw new CustomException(StatusCodes.Status404NotFound, "Tài khoản không tồn tại !");
-
-            if (status != 1 && status != 2)
-            {
-                throw new CustomException(StatusCodes.Status400BadRequest, "Trạng thái không đúng!");
-            }
-
-            account.Status = status;
-            _dbContext.Account.Update(account);
-            await _dbContext.SaveChangesAsync();
-
-            return _response.ResponseSuccess("Chuyển trạng thái thành công !");
         }
     }
 }
