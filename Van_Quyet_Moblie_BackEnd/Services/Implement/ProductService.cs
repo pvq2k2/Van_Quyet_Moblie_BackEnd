@@ -193,6 +193,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             product.Width = request.Width;
             product.Length = request.Length;
             product.Weight = request.Weight;
+            product.Slug = InputHelper.CreateSlug(request.Name!);
             product.UpdatedAt = DateTime.Now;
 
             _dbContext.Product.Update(product);

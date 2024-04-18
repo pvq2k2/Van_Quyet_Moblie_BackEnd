@@ -1,8 +1,9 @@
-﻿namespace Van_Quyet_Moblie_BackEnd.Handle.Request.SlidesRequest
+﻿namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs.Slides
 {
-    public class CreateSlidesRequest
+    public class SlidesDTO
     {
-        public IFormFile? Image { get; set; }
+        public int ID { get; set; }
+        public string? Image { get; set; }
         public int Status { get; set; }
         public string? Title { get; set; }
         public string? SubTitle { get; set; }
