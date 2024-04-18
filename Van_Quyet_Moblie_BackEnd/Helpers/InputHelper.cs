@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.AuthRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.OrderRequest;
@@ -230,6 +231,46 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             return true;
         }
 
+
+
+        public static string CreateSlug(string name)
+        {
+            // Chuyển đổi các ký tự có dấu sang các ký tự không dấu
+            name = RemoveAccents(name);
+            // Thay thế các ký tự không mong muốn bằng dấu gạch ngang
+            string slug = Regex.Replace(name, @"[^\w\d\s-]", "").Trim();
+            // Thay thế khoảng trắng bằng dấu gạch ngang và chuyển đổi chuỗi thành chữ thường
+            slug = Regex.Replace(slug, @"\s+", "-").ToLower();
+            return slug;
+        }
+
+        public static string RemoveAccents(string input)
+        {
+            // Tạo một mảng các ký tự có dấu và ký tự không dấu tương ứng
+            char[] accents = "áàảãạâấầẩẫậăắằẳẵặéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđÁÀẢÃẠÂẤẦẨẪẬĂẮẰẲẴẶÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴĐ".ToCharArray();
+            char[] noAccents = "aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyydAAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD".ToCharArray();
+
+            // Tạo một StringBuilder để lưu trữ chuỗi đã được chuyển đổi
+            StringBuilder stringBuilder = new StringBuilder(input);
+
+            // Duyệt qua từng ký tự trong chuỗi và thực hiện chuyển đổi nếu cần
+            for (int i = 0; i < stringBuilder.Length; i++)
+            {
+                char c = stringBuilder[i];
+                int index = Array.IndexOf(accents, c);
+                if (index != -1)
+                {
+                    stringBuilder[i] = noAccents[index];
+                }
+            }
+
+            // Trả về chuỗi đã được chuyển đổi
+            return stringBuilder.ToString();
+        }
+
+
+
+
         public static bool CheckLengthOfCharacters(string fullName)
         {
             return fullName.Length > 20;
@@ -247,10 +288,6 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
 
             TextInfo textInfo = new CultureInfo("vi-VN", false).TextInfo;
             return textInfo.ToTitleCase(fullName.ToLower());
-        }
-        public static string CreateSlug(string name)
-        {
-            return string.Join("-", name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLower();
         }
 
         public static bool RegexColor(string color)
