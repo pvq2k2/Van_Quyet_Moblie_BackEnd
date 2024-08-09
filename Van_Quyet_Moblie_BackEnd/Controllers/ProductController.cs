@@ -22,6 +22,12 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.GetAllProduct(pagination));
         }
 
+        [HttpPost("get-all-product-by-category")]
+        public async Task<IActionResult> GetAllProductByCategory(GetAllProductRequest request)
+        {
+            return Ok(await _iProductService.GetAllProductByCategory(request));
+        }
+
         [HttpGet("get-product-by-id/{productID}")]
         public async Task<IActionResult> GetProductByID([FromRoute] int productID)
         {

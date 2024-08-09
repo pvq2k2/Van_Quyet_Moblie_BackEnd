@@ -8,6 +8,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Interface
     public interface ICategoriesService
     {
         public Task<PageResult<CategoriesDTO>> GetAllCategories(Pagination pagination);
+        public Task<object> GetCategoriesToView();
         public Task<Response> CreateCategories(CreateCategoriesRequest request);
         public Task<ResponseObject<CategoriesDTO>> GetCategoriesByID(int categoriesID);
         public Task<ResponseObject<CategoriesDTO>> GetDetailCategoriesBySlug(string slug);
