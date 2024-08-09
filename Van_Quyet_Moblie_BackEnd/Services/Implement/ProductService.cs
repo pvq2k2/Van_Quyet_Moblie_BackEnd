@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Enums;
@@ -83,14 +84,14 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         #endregion
         public async Task<Response> CreateProduct(CreateProductRequest request)
         {
-                IsAdmin();
-                InputHelper.CreateProductValidate(request);
-                await ValidateSubCategory(request.SubCategoriesID);
-                string image = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
-                var product = CreateProductObject(request, image);
-                await _dbContext.Product.AddAsync(product);
-                await _dbContext.SaveChangesAsync();
-                return _response.ResponseSuccess("Tạo sản phẩm thành công !");
+            IsAdmin();
+            InputHelper.CreateProductValidate(request);
+            await ValidateSubCategory(request.SubCategoriesID);
+            string image = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
+            var product = CreateProductObject(request, image);
+            await _dbContext.Product.AddAsync(product);
+            await _dbContext.SaveChangesAsync();
+            return _response.ResponseSuccess("Tạo sản phẩm thành công !");
         }
 
         public async Task<PageResult<ProductDTO>> GetAllProduct(Pagination pagination)
@@ -104,6 +105,76 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
             return new PageResult<ProductDTO>(pagination, _productConverter.ListEntityProductToDTO(result.ToList()));
         }
+
+        public async Task<PageResult<ProductDTO>> GetAllProductByCategory(GetAllProductRequest request)
+        {
+            var query = _dbContext.Product.Include(p => p.SubCategories)
+                        .ThenInclude(sc => sc!.Categories)
+                        .Where(p => p.SubCategories!.CategoriesID == request.CategoryID);
+
+            if (request.SubCategoryID > 0)
+            {
+                query = query.Where(p => p.SubCategoriesID == request.SubCategoryID);
+            }
+
+            if (request.Price > 0)
+            {
+                var priceConditions = new Dictionary<int, Expression<Func<Product, bool>>>
+        {
+            { 1, p => p.Price < 1000000 },
+            { 2, p => p.Price >= 1000000 && p.Price <= 2000000 },
+            { 3, p => p.Price >= 2000000 && p.Price <= 3000000 },
+            { 4, p => p.Price >= 3000000 && p.Price <= 4000000 },
+            { 5, p => p.Price >= 4000000 && p.Price <= 5000000 },
+            { 6, p => p.Price >= 5000000 && p.Price <= 6000000 },
+            { 7, p => p.Price >= 6000000 && p.Price <= 8000000 },
+            { 8, p => p.Price >= 8000000 && p.Price <= 10000000 },
+            { 9, p => p.Price >= 10000000 && p.Price <= 12000000 },
+            { 10, p => p.Price >= 12000000 && p.Price <= 15000000 },
+            { 11, p => p.Price >= 15000000 && p.Price <= 20000000 },
+            { 12, p => p.Price >= 20000000 },
+        };
+
+                if (priceConditions.TryGetValue(request.Price, out var priceCondition))
+                {
+                    query = query.Where(priceCondition);
+                }
+            }
+
+            if (request.Storage > 0)
+            {
+                query = query.Where(p => p.ListProductAttribute!.Any(pa => pa.SizeID == request.Storage));
+            }
+
+            if (request.Option > 0)
+            {
+                query = request.Option switch
+                {
+                    1 => query.OrderByDescending(x => x.CreatedAt),
+                    2 => query.OrderBy(x => x.Price),
+                    3 => query.OrderByDescending(x => x.Price),
+                    4 => query.OrderByDescending(x => x.NumberOfViews),
+                    _ => query
+                };
+            }
+            else
+            {
+                query = query.OrderByDescending(x => x.ID);
+            }
+
+            var pagination = new Pagination() { PageSize = request.PageSize, PageNumber = request.PageNumber };
+            pagination.TotalCount = await query.CountAsync();
+
+            var paginatedQuery = query.Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                                      .Take(pagination.PageSize);
+
+            var products = await paginatedQuery.ToListAsync();
+
+            var productDTOs = _productConverter.ListEntityProductToDTO(products);
+
+            return new PageResult<ProductDTO>(pagination, productDTOs);
+        }
+
 
         public async Task<ResponseObject<List<ProductDTO>>> GetFeaturedProduct()
         {

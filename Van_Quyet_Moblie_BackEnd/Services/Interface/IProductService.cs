@@ -8,6 +8,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Interface
     public interface IProductService
     {
         public Task<PageResult<ProductDTO>> GetAllProduct(Pagination pagination);
+        public Task<PageResult<ProductDTO>> GetAllProductByCategory(GetAllProductRequest request);
         public Task<ResponseObject<List<ProductDTO>>> GetRelatedProducts(int productID);
         public Task<ResponseObject<List<ProductDTO>>> GetFeaturedProduct();
         public Task<ResponseObject<ProductDTO>> GetProductByID(int productID);

@@ -34,6 +34,12 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iCategoriesService.GetCategoriesByID(categoriesID));
         }
 
+        [HttpGet("get-categories-to-view")]
+        public async Task<IActionResult> GetCategoriesToView()
+        {
+            return Ok(await _iCategoriesService.GetCategoriesToView());
+        }
+
         [HttpGet("get-categories-by-slug/{slug}")]
         public async Task<IActionResult> GetDetailCategoriesBySlug([FromRoute] string slug)
         {

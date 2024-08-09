@@ -84,6 +84,12 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             return new PageResult<CategoriesDTO>(pagination, _categoriesConverter.ListEntityCategoriesToDTO(result.ToList()));
         }
 
+        public async Task<object> GetCategoriesToView()
+        {
+            var query = await _dbContext.Categories.Include(c => c.ListSubCategories).ToListAsync();
+            return query;
+        }
+
         public async Task<ResponseObject<CategoriesDTO>> GetCategoriesByID(int categoriesID)
         {
             IsAdmin();
