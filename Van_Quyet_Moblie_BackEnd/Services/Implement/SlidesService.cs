@@ -36,7 +36,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             string role = _tokenHelper.GetRole();
             if (role != "Admin")
             {
-                throw new CustomException(StatusCodes.Status401Unauthorized, "Không có quyền !");
+                throw new CustomException(StatusCodes.Status403Forbidden, "Không có quyền !");
             }
         }
         private async Task<string> UploadAndValidateImage(IFormFile image, string folderPath, string fileName)
