@@ -22,10 +22,10 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductImageService.GetAllProductImage(pagination, productID));
         }
 
-        [HttpGet("get-product-image-by-id/{productImage}")]
-        public async Task<IActionResult> GetProductImageByID([FromRoute] int productImage)
+        [HttpGet("get-product-image-by-id/{productImageID}")]
+        public async Task<IActionResult> GetProductImageByID([FromRoute] int productImageID)
         {
-            return Ok(await _iProductImageService.GetProductImageByID(productImage));
+            return Ok(await _iProductImageService.GetProductImageByID(productImageID));
         }
 
         [HttpGet("get-update-product-image-by-id/{productImageID}")]

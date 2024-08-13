@@ -204,7 +204,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         {
             var product = await _dbContext.Product
                 .Include(x => x.SubCategories)
-                .ThenInclude(x => x.Categories)
+                .ThenInclude(x => x!.Categories)
                 .Include(x => x.ListProductReview)
                 .Include(x => x.ListProductImage)
                 .Include(x => x.ListProductAttribute!)
@@ -215,6 +215,19 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             ?? throw new CustomException(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !");
 
             return product;
+        }
+
+        public async Task<PageResult<ProductDTO>> GetAllProductsWhereCommentsExist(Pagination pagination)
+        {
+            IsAdmin();
+            var query = _dbContext.Product.Include(x => x.ListProductReview).Where(x => x.ListProductReview!.Count > 0).OrderByDescending(x => x.ID).AsQueryable();
+
+            var result = PageResult<Product>.ToPageResult(pagination, query);
+            pagination.TotalCount = await query.CountAsync();
+
+            var list = result.ToList();
+
+            return new PageResult<ProductDTO>(pagination, _productConverter.ListEntityProductToDTO(result.ToList()));
         }
 
         public async Task<ResponseObject<ProductDTO>> GetProductByIDAndUpdateView(int productID)
