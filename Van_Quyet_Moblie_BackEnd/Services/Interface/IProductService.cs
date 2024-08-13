@@ -15,6 +15,7 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Interface
         public Task<ResponseObject<GetUpdateProductDTO>> GetUpdateProductByID(int productID);
         public Task<ResponseObject<ProductDTO>> GetProductByIDAndUpdateView(int productID);
         public Task<Response> CreateProduct(CreateProductRequest request);
+        public Task<object> GetProductBySlug(string request);
         public Task<Response> UpdateProduct(int productID, UpdateProductRequest request);
         public Task<ResponseObject<string>> RemoveProduct(int productID);
     }

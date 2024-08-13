@@ -200,6 +200,23 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             return _responseGetUpdateProduct.ResponseSuccess("Thành công !", _productConverter.EntityProductToGetUpdateProductDTO(product));
         }
 
+        public async Task<object> GetProductBySlug(string slug)
+        {
+            var product = await _dbContext.Product
+                .Include(x => x.SubCategories)
+                .ThenInclude(x => x.Categories)
+                .Include(x => x.ListProductReview)
+                .Include(x => x.ListProductImage)
+                .Include(x => x.ListProductAttribute!)
+                .ThenInclude(x => x.Color)
+                .Include(x => x.ListProductAttribute!)
+                .ThenInclude(x => x.Size)
+                .FirstOrDefaultAsync(p => p.Slug == slug)
+            ?? throw new CustomException(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !");
+
+            return product;
+        }
+
         public async Task<ResponseObject<ProductDTO>> GetProductByIDAndUpdateView(int productID)
         {
             var product = await IsProductExist(productID);
