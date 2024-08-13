@@ -9,8 +9,8 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Interface
     {
         public Task<PageResult<ProductReviewDTO>> GetAllProductReview(Pagination pagination);
         public Task<ResponseObject<ProductReviewDTO>> GetProductReviewByID(int productReviewID);
-        public Task<ResponseObject<ProductReviewDTO>> CreateProductReview(CreateProductReviewRequest request);
-        public Task<ResponseObject<ProductReviewDTO>> UpdateProductReview(int productReviewID, UpdateProductReviewRequest request);
-        public Task<ResponseObject<string>> RemoveProductReview(int productReviewID);
+        public Task<Response> CreateProductReview(CreateProductReviewRequest request);
+        public Task<Response> UpdateProductReview(int productReviewID, UpdateProductReviewRequest request);
+        public Task<Response> RemoveProductReview(int productReviewID);
     }
 }

@@ -9,7 +9,7 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Converter
         {
             return new ProductReviewDTO
             {
-                ProductReviewID = productReview.ID,
+                ID = productReview.ID,
                 ContentRated = productReview.ContentRated,
                 PointEvaluation = productReview.PointEvaluation,
                 ContentSeen = productReview.ContentSeen,

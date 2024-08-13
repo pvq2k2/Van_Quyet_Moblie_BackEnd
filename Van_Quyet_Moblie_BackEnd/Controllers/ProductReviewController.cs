@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductReviewRequest;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/product-review")]
     [ApiController]
     public class ProductReviewController : ControllerBase
     {
@@ -17,36 +16,32 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             _iProductReviewService = iProductReviewService;
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost("GetAllProductReview")]
+        [HttpPost("get-all-product-review")]
         public async Task<IActionResult> GetAllProductReview(Pagination pagination)
         {
             return Ok(await _iProductReviewService.GetAllProductReview(pagination));
         }
 
-        [HttpGet("GetProductReviewByID")]
-        public async Task<IActionResult> GetProductByID(int productID)
+        [HttpGet("get-product-review-by-id/{productReviewID}")]
+        public async Task<IActionResult> GetProductReviewByID([FromRoute] int productReviewID)
         {
-            return Ok(await _iProductReviewService.GetProductReviewByID(productID));
+            return Ok(await _iProductReviewService.GetProductReviewByID(productReviewID));
         }
 
-        [Authorize]
-        [HttpPost("CreateProductReview")]
+        [HttpPost("create-product-review")]
         public async Task<IActionResult> CreateProductReview(CreateProductReviewRequest request)
         {
             return Ok(await _iProductReviewService.CreateProductReview(request));
         }
 
-        [Authorize]
-        [HttpPut("UpdateProductReview")]
-        public async Task<IActionResult> UpdateProductReview(int productReviewID, UpdateProductReviewRequest request)
+        [HttpPut("update-product-review/{productReviewID}")]
+        public async Task<IActionResult> UpdateProductReview([FromRoute] int productReviewID, UpdateProductReviewRequest request)
         {
             return Ok(await _iProductReviewService.UpdateProductReview(productReviewID, request));
         }
 
-        [Authorize]
-        [HttpDelete("RemoveProductReview")]
-        public async Task<IActionResult> RemoveProductReview(int productReviewID)
+        [HttpDelete("remove-product-review/{productReviewID}")]
+        public async Task<IActionResult> RemoveProductReview([FromRoute] int productReviewID)
         {
             return Ok(await _iProductReviewService.RemoveProductReview(productReviewID));
         }

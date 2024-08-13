@@ -22,6 +22,12 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.GetAllProduct(pagination));
         }
 
+        [HttpPost("get-all-product-where-comments-exist")]
+        public async Task<IActionResult> GetAllProductsWhereCommentsExist(Pagination pagination)
+        {
+            return Ok(await _iProductService.GetAllProductsWhereCommentsExist(pagination));
+        }
+
         [HttpPost("get-all-product-by-category")]
         public async Task<IActionResult> GetAllProductByCategory(GetAllProductRequest request)
         {
@@ -40,8 +46,8 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.GetUpdateProductByID(productID));
         }
 
-        [HttpGet("get-product-by-id-and-update-view")]
-        public async Task<IActionResult> GetProductByIDAndUpdateView(int productID)
+        [HttpGet("get-product-by-id-and-update-view/{productID}")]
+        public async Task<IActionResult> GetProductByIDAndUpdateView([FromRoute] int productID)
         {
             return Ok(await _iProductService.GetProductByIDAndUpdateView(productID));
         }
@@ -76,8 +82,8 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.UpdateProduct(productID, request));
         }
 
-        [HttpDelete("remove-product")]
-        public async Task<IActionResult> RemoveProduct(int productID)
+        [HttpDelete("remove-product/{productID}")]
+        public async Task<IActionResult> RemoveProduct([FromRoute] int productID)
         {
             return Ok(await _iProductService.RemoveProduct(productID));
         }
