@@ -3,7 +3,7 @@ using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Enums;
 using Van_Quyet_Moblie_BackEnd.Handle.Converter;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductReview;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductReviewRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
@@ -98,10 +98,10 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             return _response.ResponseSuccess("Bình luận thành công !");
         }
 
-        public async Task<PageResult<ProductReviewDTO>> GetAllProductReview(Pagination pagination)
+        public async Task<PageResult<ProductReviewDTO>> GetAllProductReview(int productID, Pagination pagination)
         {
             IsAdmin();
-            var query = _dbContext.ProductReview.OrderByDescending(x => x.ID).AsQueryable();
+            var query = _dbContext.ProductReview.Where(x => x.ProductID == productID).OrderByDescending(x => x.ID).AsQueryable();
 
             var result = PageResult<ProductReview>.ToPageResult(pagination, query);
             pagination.TotalCount = await query.CountAsync();
@@ -109,6 +109,18 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             var list = result.ToList();
 
             return new PageResult<ProductReviewDTO>(pagination, _productReviewConverter.ListProductReviewToDTO(result.ToList()));
+        }
+
+        public async Task<PageResult<GetProductReviewToViewDTO>> GetProductReviewToView(int productID, Pagination pagination)
+        {
+            var query = _dbContext.ProductReview.Include(x => x.User).Where(x => x.ProductID == productID && x.Status == 2).OrderByDescending(x => x.ID).AsQueryable();
+
+            var result = PageResult<ProductReview>.ToPageResult(pagination, query);
+            pagination.TotalCount = await query.CountAsync();
+
+            var list = result.ToList();
+
+            return new PageResult<GetProductReviewToViewDTO>(pagination, _productReviewConverter.ListProductReviewToGetProductReviewDTO(result.ToList()));
         }
 
         public async Task<ResponseObject<ProductReviewDTO>> GetProductReviewByID(int productReviewID)

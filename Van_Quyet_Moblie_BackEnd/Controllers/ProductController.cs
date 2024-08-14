@@ -58,8 +58,8 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             return Ok(await _iProductService.GetProductBySlug(slug));
         }
 
-        [HttpGet("get-related-products")]
-        public async Task<IActionResult> GetRelatedProducts(int productID)
+        [HttpGet("get-related-products/{productID}")]
+        public async Task<IActionResult> GetRelatedProducts([FromRoute] int productID)
         {
             return Ok(await _iProductService.GetRelatedProducts(productID));
         }

@@ -11,6 +11,7 @@ using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Auth;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Categories;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductAttribute;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductImage;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductReview;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Slides;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs.SubCategories;
