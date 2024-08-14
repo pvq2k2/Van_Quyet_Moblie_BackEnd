@@ -1,4 +1,4 @@
-﻿namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs
+﻿namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductReview
 {
     public class ProductReviewDTO
     {

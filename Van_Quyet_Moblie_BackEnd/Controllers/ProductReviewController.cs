@@ -16,10 +16,16 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             _iProductReviewService = iProductReviewService;
         }
 
-        [HttpPost("get-all-product-review")]
-        public async Task<IActionResult> GetAllProductReview(Pagination pagination)
+        [HttpPost("get-all-product-review/{productID}")]
+        public async Task<IActionResult> GetAllProductReview([FromRoute] int productID, Pagination pagination)
         {
-            return Ok(await _iProductReviewService.GetAllProductReview(pagination));
+            return Ok(await _iProductReviewService.GetAllProductReview(productID, pagination));
+        }
+
+        [HttpPost("get-product-review-to-view/{productID}")]
+        public async Task<IActionResult> GetProductReviewToView([FromRoute] int productID, Pagination pagination)
+        {
+            return Ok(await _iProductReviewService.GetProductReviewToView(productID, pagination));
         }
 
         [HttpGet("get-product-review-by-id/{productReviewID}")]

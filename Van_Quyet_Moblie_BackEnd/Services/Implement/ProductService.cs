@@ -205,7 +205,6 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             var product = await _dbContext.Product
                 .Include(x => x.SubCategories)
                 .ThenInclude(x => x!.Categories)
-                .Include(x => x.ListProductReview)
                 .Include(x => x.ListProductImage)
                 .Include(x => x.ListProductAttribute!)
                 .ThenInclude(x => x.Color)
