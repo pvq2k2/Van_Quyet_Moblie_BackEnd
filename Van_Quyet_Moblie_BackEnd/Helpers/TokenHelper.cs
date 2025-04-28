@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
+using Van_Quyet_Moblie_BackEnd.Middleware;
 
 namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
@@ -20,19 +21,19 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
             var authorizationHeader = _httpContextAccessor?.HttpContext?.Request.Headers["Authorization"].FirstOrDefault();
             if (string.IsNullOrEmpty(authorizationHeader))
             {
-                throw new Exception("Không có token!");
+                throw new CustomException(StatusCodes.Status400BadRequest,"Không có token!");
             }
 
             if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception("Không đúng dạng 'Bearer token'!");
+                throw new CustomException(StatusCodes.Status400BadRequest, "Không đúng dạng 'Bearer token'!");
             }
 
             var jwtToken = authorizationHeader["Bearer ".Length..].Trim();
 
             if (!ValidateToken(jwtToken))
             {
-                throw new Exception("Xác thực không hợp lệ !");
+                throw new CustomException(StatusCodes.Status401Unauthorized, "Xác thực không hợp lệ !");
             }
 
             return true;
@@ -46,6 +47,17 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                 throw new Exception("Không lấy được userID");
             }
             return userID;
+        }
+
+        public string GetRole()
+        {
+            var roleClaim = _httpContextAccessor?.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+            string role = roleClaim!.Value.ToString();
+            if (string.IsNullOrEmpty(role))
+            {
+                throw new Exception("Không lấy được role");
+            }
+            return role;
         }
 
         private bool ValidateToken(string jwtToken)

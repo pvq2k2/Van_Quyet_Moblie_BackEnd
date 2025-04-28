@@ -1,14 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using QuanLyTrungTam_API.Helper;
+﻿using Microsoft.AspNetCore.Mvc;
+using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.DecentralizationRequest;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/decentralization")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class DecentralizationController : ControllerBase
     {
         private readonly IDecentralizationService _iDecentralizationService;
@@ -18,32 +16,32 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             _iDecentralizationService = iDecentralizationService;
         }
 
-        [HttpPost("GetAllDecentralization")]
+        [HttpPost("get-all-decentralization")]
         public async Task<IActionResult> GetAllDecentralization(Pagination pagination)
         {
             return Ok(await _iDecentralizationService.GetAllDecentralization(pagination));
         }
 
-        [HttpGet("GetDecentralizationByID")]
-        public async Task<IActionResult> GetDecentralizationByID(int decentralizationID)
+        [HttpGet("get-decentralization-by-id/{decentralizationID}")]
+        public async Task<IActionResult> GetDecentralizationByID([FromRoute] int decentralizationID)
         {
             return Ok(await _iDecentralizationService.GetDecentralizationByID(decentralizationID));
         }
 
-        [HttpPost("CreateDecentralization")]
+        [HttpPost("create-decentralization")]
         public async Task<IActionResult> CreateDecentralization(CreateDecentralizationRequest request)
         {
             return Ok(await _iDecentralizationService.CreateDecentralization(request));
         }
 
-        [HttpPatch("UpdateDecentralization")]
-        public async Task<IActionResult> UpdateDecentralization(int decentralizationID, UpdateDecentralizationRequest request)
+        [HttpPut("update-decentralization/{decentralizationID}")]
+        public async Task<IActionResult> UpdateDecentralization([FromRoute] int decentralizationID, UpdateDecentralizationRequest request)
         {
             return Ok(await _iDecentralizationService.UpdateDecentralization(decentralizationID, request));
         }
 
-        [HttpDelete("RemoveDecentralization")]
-        public async Task<IActionResult> RemoveDecentralization(int decentralizationID)
+        [HttpDelete("remove-decentralization/{decentralizationID}")]
+        public async Task<IActionResult> RemoveDecentralization([FromRoute] int decentralizationID)
         {
             return Ok(await _iDecentralizationService.RemoveDecentralization(decentralizationID));
         }

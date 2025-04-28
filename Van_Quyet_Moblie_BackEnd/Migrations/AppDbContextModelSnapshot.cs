@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Van_Quyet_Moblie_BackEnd.Helpers.DBContext;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 
 #nullable disable
 
@@ -67,6 +67,42 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.ToTable("Account");
                 });
 
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Address", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DetailAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DistrictID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProvinceID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WardID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("Address");
+                });
+
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Cart", b =>
                 {
                     b.Property<int>("ID")
@@ -123,6 +159,60 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.ToTable("CartItem");
                 });
 
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Categories", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(1)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Slug")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Color", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Color");
+                });
+
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Decentralization", b =>
                 {
                     b.Property<int>("ID")
@@ -131,11 +221,11 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
-                    b.Property<string>("AuthorityName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -299,11 +389,11 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
-                    b.Property<string>("AvatarImageProduct")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Discount")
                         .HasColumnType("int");
@@ -311,10 +401,13 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<int>("Height")
                         .HasColumnType("int");
 
+                    b.Property<string>("Image")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Length")
                         .HasColumnType("int");
 
-                    b.Property<string>("NameProduct")
+                    b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("NumberOfViews")
@@ -323,14 +416,14 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<double>("Price")
                         .HasColumnType("float");
 
-                    b.Property<int>("ProductTypeID")
-                        .HasColumnType("int");
+                    b.Property<string>("Slug")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("Title")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("SubCategoriesID")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -343,9 +436,49 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("ProductTypeID");
+                    b.HasIndex("SubCategoriesID");
 
                     b.ToTable("Product");
+                });
+
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductAttribute", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<int>("ColorID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("float");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SizeID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("ColorID");
+
+                    b.HasIndex("ProductID");
+
+                    b.HasIndex("SizeID");
+
+                    b.ToTable("ProductAttribute");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductImage", b =>
@@ -356,10 +489,13 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
+                    b.Property<int>("ColorID")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ImageProduct")
+                    b.Property<string>("Image")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProductID")
@@ -375,6 +511,8 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("ColorID");
 
                     b.HasIndex("ProductID");
 
@@ -422,31 +560,6 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.ToTable("ProductReview");
                 });
 
-            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductType", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ImageTypeProduct")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NameProductType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("ProductType");
-                });
-
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.RefreshToken", b =>
                 {
                     b.Property<int>("ID")
@@ -475,6 +588,31 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.ToTable("RefreshToken");
                 });
 
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Size", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Size");
+                });
+
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Slides", b =>
                 {
                     b.Property<int>("ID")
@@ -492,8 +630,17 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<int>("ProductID")
                         .HasColumnType("int");
 
+                    b.Property<string>("ProductSlug")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("SubTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -503,6 +650,39 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.HasIndex("ProductID");
 
                     b.ToTable("Slides");
+                });
+
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.SubCategories", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<int>("CategoriesID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Image")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Slug")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("CategoriesID");
+
+                    b.ToTable("SubCategories");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.User", b =>
@@ -516,11 +696,7 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<int>("AccountID")
                         .HasColumnType("int");
 
-                    b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Avatar")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -532,7 +708,10 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Property<string>("FullName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Phone")
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NumberPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -624,6 +803,17 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Navigation("Decentralization");
                 });
 
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Address", b =>
+                {
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.User", "User")
+                        .WithMany("ListAddress")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Cart", b =>
                 {
                     b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.User", "User")
@@ -702,22 +892,57 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Product", b =>
                 {
-                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.ProductType", "ProductType")
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.SubCategories", "SubCategories")
                         .WithMany("ListProduct")
-                        .HasForeignKey("ProductTypeID")
+                        .HasForeignKey("SubCategoriesID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ProductType");
+                    b.Navigation("SubCategories");
+                });
+
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductAttribute", b =>
+                {
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Color", "Color")
+                        .WithMany()
+                        .HasForeignKey("ColorID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Product", "Product")
+                        .WithMany("ListProductAttribute")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Size", "Size")
+                        .WithMany()
+                        .HasForeignKey("SizeID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Color");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Size");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductImage", b =>
                 {
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Color", "Color")
+                        .WithMany()
+                        .HasForeignKey("ColorID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Product", "Product")
                         .WithMany("ListProductImage")
                         .HasForeignKey("ProductID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Color");
 
                     b.Navigation("Product");
                 });
@@ -761,6 +986,17 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.SubCategories", b =>
+                {
+                    b.HasOne("Van_Quyet_Moblie_BackEnd.Entities.Categories", "Categories")
+                        .WithMany("ListSubCategories")
+                        .HasForeignKey("CategoriesID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Categories");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.User", b =>
@@ -812,6 +1048,11 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
                     b.Navigation("ListCartItem");
                 });
 
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Categories", b =>
+                {
+                    b.Navigation("ListSubCategories");
+                });
+
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.Decentralization", b =>
                 {
                     b.Navigation("ListAccount");
@@ -838,18 +1079,22 @@ namespace Van_Quyet_Moblie_BackEnd.Migrations
 
                     b.Navigation("ListOrderDetail");
 
+                    b.Navigation("ListProductAttribute");
+
                     b.Navigation("ListProductImage");
 
                     b.Navigation("ListProductReview");
                 });
 
-            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.ProductType", b =>
+            modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.SubCategories", b =>
                 {
                     b.Navigation("ListProduct");
                 });
 
             modelBuilder.Entity("Van_Quyet_Moblie_BackEnd.Entities.User", b =>
                 {
+                    b.Navigation("ListAddress");
+
                     b.Navigation("ListCart");
 
                     b.Navigation("ListOrder");

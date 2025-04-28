@@ -1,61 +1,102 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using QuanLyTrungTam_API.Helper;
+using System.Linq.Expressions;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
 using Van_Quyet_Moblie_BackEnd.Enums;
-using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+using Van_Quyet_Moblie_BackEnd.Handle.Converter;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
+using Van_Quyet_Moblie_BackEnd.Middleware;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
-    public class ProductService : BaseService, IProductService
+    public class ProductService : IProductService
     {
-        private readonly ResponseObject<ProductDTO> _response;
-        private readonly CloudinaryHelper _cloundinaryHelper;
-        public ProductService(ResponseObject<ProductDTO> response, CloudinaryHelper cloudinaryHelper)
+        private readonly ProductConverter _productConverter;
+        private readonly Response _response;
+        private readonly AppDbContext _dbContext;
+        private readonly TokenHelper _tokenHelper;
+        private readonly ResponseObject<ProductDTO> _responseProduct;
+        private readonly ResponseObject<GetUpdateProductDTO> _responseGetUpdateProduct;
+        private readonly CloudinaryHelper _cloudinaryHelper;
+        public ProductService(AppDbContext dbContext, ResponseObject<ProductDTO> responseProduct, CloudinaryHelper cloudinaryHelper, Response response, ResponseObject<GetUpdateProductDTO> responseGetUpdateProduct, TokenHelper tokenHelper)
         {
+            _productConverter = new ProductConverter();
+            _dbContext = dbContext;
+            _responseProduct = responseProduct;
+            _cloudinaryHelper = cloudinaryHelper;
             _response = response;
-            _cloundinaryHelper = cloudinaryHelper;
+            _responseGetUpdateProduct = responseGetUpdateProduct;
+            _tokenHelper = tokenHelper;
         }
-        public async Task<ResponseObject<ProductDTO>> CreateProduct(CreateProductRequest request)
+
+        #region Private Function
+        #region Validate
+        private async Task ValidateSubCategory(int subCategoryID)
         {
-            try
+            if (!await _dbContext.SubCategories.AnyAsync(x => x.ID == subCategoryID))
             {
-                InputHelper.CreateProductValidate(request);
-                if (!await _context.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
-                {
-                    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
-                }
-                InputHelper.IsImage(request.AvatarImageProduct!);
-
-                string image = await _cloundinaryHelper.UploadImage(request.AvatarImageProduct!, "van-quyet-mobile/product", "product");
-                var product = new Product
-                {
-                    NameProduct = request.NameProduct,
-                    Price = request.Price,
-                    AvatarImageProduct = image,
-                    Discount = request.Discount,
-                    Title = request.Title,
-                    Status = (int)Status.Active,
-                    ProductTypeID = request.ProductTypeID
-                };
-
-                await _context.Product.AddAsync(product);
-                await _context.SaveChangesAsync();
-
-                return _response.ResponseSuccess("Thêm sản phẩm thành công !", _productConverter.EntityProductToDTO(product));
+                throw new CustomException(StatusCodes.Status404NotFound, "Danh mục không tồn tại !");
             }
-            catch (Exception e)
+        }
+        private void IsAdmin()
+        {
+            _tokenHelper.IsToken();
+            string role = _tokenHelper.GetRole();
+            if (role != "Admin")
             {
-                return _response.ResponseError(StatusCodes.Status500InternalServerError, e.Message, null!);
+                throw new CustomException(StatusCodes.Status403Forbidden, "Không có quyền !");
             }
+        }
+        private async Task<string> UploadAndValidateImage(IFormFile image, string folderPath, string fileName)
+        {
+            InputHelper.IsImage(image);
+            return await _cloudinaryHelper.UploadImage(image, folderPath, fileName);
+        }
+        private async Task<Product> IsProductExist(int productID)
+        {
+            var product = await _dbContext.Product.FirstOrDefaultAsync(x => x.ID == productID);
+            return product ?? throw new CustomException(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !");
+        }
+        #endregion
+        private static Product CreateProductObject(CreateProductRequest request, string image)
+        {
+            string slug = InputHelper.CreateSlug(request.Name!);
+            return new Product
+            {
+                Name = request.Name,
+                Price = request.Price,
+                Slug = slug,
+                Image = image,
+                Discount = request.Discount,
+                Description = request.Description,
+                Height = request.Height,
+                Width = request.Width,
+                Length = request.Length,
+                Weight = request.Weight,
+                SubCategoriesID = request.SubCategoriesID,
+                Status = (int)Status.Active,
+            };
+        }
+        #endregion
+        public async Task<Response> CreateProduct(CreateProductRequest request)
+        {
+            IsAdmin();
+            InputHelper.CreateProductValidate(request);
+            await ValidateSubCategory(request.SubCategoriesID);
+            string image = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
+            var product = CreateProductObject(request, image);
+            await _dbContext.Product.AddAsync(product);
+            await _dbContext.SaveChangesAsync();
+            return _response.ResponseSuccess("Tạo sản phẩm thành công !");
         }
 
         public async Task<PageResult<ProductDTO>> GetAllProduct(Pagination pagination)
         {
-            var query = _context.Product.OrderByDescending(x => x.ID).AsQueryable();
+            var query = _dbContext.Product.OrderByDescending(x => x.ID).AsQueryable();
 
             var result = PageResult<Product>.ToPageResult(pagination, query);
             pagination.TotalCount = await query.CountAsync();
@@ -65,11 +106,81 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
             return new PageResult<ProductDTO>(pagination, _productConverter.ListEntityProductToDTO(result.ToList()));
         }
 
+        public async Task<PageResult<ProductDTO>> GetAllProductByCategory(GetAllProductRequest request)
+        {
+            var query = _dbContext.Product.Include(p => p.SubCategories)
+                        .ThenInclude(sc => sc!.Categories)
+                        .Where(p => p.SubCategories!.CategoriesID == request.CategoryID);
+
+            if (request.SubCategoryID > 0)
+            {
+                query = query.Where(p => p.SubCategoriesID == request.SubCategoryID);
+            }
+
+            if (request.Price > 0)
+            {
+                var priceConditions = new Dictionary<int, Expression<Func<Product, bool>>>
+        {
+            { 1, p => p.Price < 1000000 },
+            { 2, p => p.Price >= 1000000 && p.Price <= 2000000 },
+            { 3, p => p.Price >= 2000000 && p.Price <= 3000000 },
+            { 4, p => p.Price >= 3000000 && p.Price <= 4000000 },
+            { 5, p => p.Price >= 4000000 && p.Price <= 5000000 },
+            { 6, p => p.Price >= 5000000 && p.Price <= 6000000 },
+            { 7, p => p.Price >= 6000000 && p.Price <= 8000000 },
+            { 8, p => p.Price >= 8000000 && p.Price <= 10000000 },
+            { 9, p => p.Price >= 10000000 && p.Price <= 12000000 },
+            { 10, p => p.Price >= 12000000 && p.Price <= 15000000 },
+            { 11, p => p.Price >= 15000000 && p.Price <= 20000000 },
+            { 12, p => p.Price >= 20000000 },
+        };
+
+                if (priceConditions.TryGetValue(request.Price, out var priceCondition))
+                {
+                    query = query.Where(priceCondition);
+                }
+            }
+
+            if (request.Storage > 0)
+            {
+                query = query.Where(p => p.ListProductAttribute!.Any(pa => pa.SizeID == request.Storage));
+            }
+
+            if (request.Option > 0)
+            {
+                query = request.Option switch
+                {
+                    1 => query.OrderByDescending(x => x.CreatedAt),
+                    2 => query.OrderBy(x => x.Price),
+                    3 => query.OrderByDescending(x => x.Price),
+                    4 => query.OrderByDescending(x => x.NumberOfViews),
+                    _ => query
+                };
+            }
+            else
+            {
+                query = query.OrderByDescending(x => x.ID);
+            }
+
+            var pagination = new Pagination() { PageSize = request.PageSize, PageNumber = request.PageNumber };
+            pagination.TotalCount = await query.CountAsync();
+
+            var paginatedQuery = query.Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                                      .Take(pagination.PageSize);
+
+            var products = await paginatedQuery.ToListAsync();
+
+            var productDTOs = _productConverter.ListEntityProductToDTO(products);
+
+            return new PageResult<ProductDTO>(pagination, productDTOs);
+        }
+
+
         public async Task<ResponseObject<List<ProductDTO>>> GetFeaturedProduct()
         {
             var response = new ResponseObject<List<ProductDTO>>();
 
-            var topProducts = await _context.Product
+            var topProducts = await _dbContext.Product
             .OrderByDescending(p => p.NumberOfViews)
             .Take(10)
             .ToListAsync();
@@ -79,39 +190,61 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<ProductDTO>> GetProductByID(int productID)
         {
-            var product = await _context.Product.FirstOrDefaultAsync(x => x.ID == productID);
-            if (product == null)
-            {
-                return _response.ResponseError(StatusCodes.Status400BadRequest, "Sản phẩm không tồn tại !", null!);
-            }
-            return _response.ResponseSuccess("Thành công !", _productConverter.EntityProductToDTO(product));
+            var product = await IsProductExist(productID);
+            return _responseProduct.ResponseSuccess("Thành công !", _productConverter.EntityProductToDTO(product));
+        }
+        public async Task<ResponseObject<GetUpdateProductDTO>> GetUpdateProductByID(int productID)
+        {
+            IsAdmin();
+            var product = await IsProductExist(productID);
+            return _responseGetUpdateProduct.ResponseSuccess("Thành công !", _productConverter.EntityProductToGetUpdateProductDTO(product));
+        }
+
+        public async Task<object> GetProductBySlug(string slug)
+        {
+            var product = await _dbContext.Product
+                .Include(x => x.SubCategories)
+                .ThenInclude(x => x!.Categories)
+                .Include(x => x.ListProductImage)
+                .Include(x => x.ListProductAttribute!)
+                .ThenInclude(x => x.Color)
+                .Include(x => x.ListProductAttribute!)
+                .ThenInclude(x => x.Size)
+                .FirstOrDefaultAsync(p => p.Slug == slug)
+            ?? throw new CustomException(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !");
+
+            return product;
+        }
+
+        public async Task<PageResult<ProductDTO>> GetAllProductsWhereCommentsExist(Pagination pagination)
+        {
+            IsAdmin();
+            var query = _dbContext.Product.Include(x => x.ListProductReview).Where(x => x.ListProductReview!.Count > 0).OrderByDescending(x => x.ID).AsQueryable();
+
+            var result = PageResult<Product>.ToPageResult(pagination, query);
+            pagination.TotalCount = await query.CountAsync();
+
+            var list = result.ToList();
+
+            return new PageResult<ProductDTO>(pagination, _productConverter.ListEntityProductToDTO(result.ToList()));
         }
 
         public async Task<ResponseObject<ProductDTO>> GetProductByIDAndUpdateView(int productID)
         {
-            var product = await _context.Product.FirstOrDefaultAsync(x => x.ID == productID);
-            if (product == null)
-            {
-                return _response.ResponseError(StatusCodes.Status400BadRequest, "Sản phẩm không tồn tại !", null!);
-            }
+            var product = await IsProductExist(productID);
             product.NumberOfViews++;
-            _context.Product.Update(product);
-            await _context.SaveChangesAsync();
-            return _response.ResponseSuccess("Thành công !", _productConverter.EntityProductToDTO(product));
+            _dbContext.Product.Update(product);
+            await _dbContext.SaveChangesAsync();
+            return _responseProduct.ResponseSuccess("Thành công !", _productConverter.EntityProductToDTO(product));
         }
 
         public async Task<ResponseObject<List<ProductDTO>>> GetRelatedProducts(int productID)
         {
             var response = new ResponseObject<List<ProductDTO>>();
-            var currentProduct = await _context.Product.FirstOrDefaultAsync(p => p.ID == productID);
+            var currentProduct = await IsProductExist(productID);
 
-            if (currentProduct == null)
-            {
-                return response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);
-            }
-
-            var relatedProducts = _context.Product
-            .Where(p => p.ProductTypeID == currentProduct.ProductTypeID && p.ID != currentProduct.ID)
+            var relatedProducts = _dbContext.Product
+            .Where(p => p.SubCategoriesID == currentProduct.SubCategoriesID && p.ID != currentProduct.ID)
             .OrderByDescending(p => p.NumberOfViews)
             .Take(5)
             .ToList();
@@ -123,63 +256,50 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
         public async Task<ResponseObject<string>> RemoveProduct(int productID)
         {
             var response = new ResponseObject<string>();
-            var product = await _context.Product.FirstOrDefaultAsync(x => x.ID == productID);
-            if (product == null)
-            {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Sảm phẩm không tồn tại !", null!);
-            }
+            var product = await IsProductExist(productID);
 
-            _context.Product.Remove(product);
-            await _context.SaveChangesAsync();
+            _dbContext.Product.Remove(product);
+            await _dbContext.SaveChangesAsync();
 
             return response.ResponseSuccess("Xóa sản phẩm thành công !", null!);
         }
 
-        public async Task<ResponseObject<ProductDTO>> UpdateProduct(int productID, UpdateProductRequest request)
+        public async Task<Response> UpdateProduct(int productID, UpdateProductRequest request)
         {
-            try
+            IsAdmin();
+            var product = await IsProductExist(productID);
+            InputHelper.UpdateProductValidate(request);
+            await ValidateSubCategory(request.SubCategoriesID);
+
+            string img;
+            if (request.Image == null || request.Image.Length == 0)
             {
-                var product = await _context.Product.FirstOrDefaultAsync(x => x.ID == productID);
-                if (product == null)
-                {
-                    return _response.ResponseError(StatusCodes.Status404NotFound, "Sản phẩm không tồn tại !", null!);
-                }
-                InputHelper.UpdateProductValidate(request);
-                if (!await _context.ProductType.AnyAsync(x => x.ID == request.ProductTypeID))
-                {
-                    return _response.ResponseError(StatusCodes.Status404NotFound, "Danh mục không tồn tại !", null!);
-                }
-
-                string img;
-                if (request.AvatarImageProduct == null || request.AvatarImageProduct.Length == 0)
-                {
-                    img = product.AvatarImageProduct!;
-                }
-                else
-                {
-                    InputHelper.IsImage(request.AvatarImageProduct!);
-                    img = await _cloundinaryHelper.UploadImage(request.AvatarImageProduct, "van-quyet-mobile/product", "product");
-                    await _cloundinaryHelper.DeleteImageByUrl(product.AvatarImageProduct!);
-                }
-
-                product.NameProduct = request.NameProduct;
-                product.Price = request.Price;
-                product.Title = request.Title;
-                product.AvatarImageProduct = img;
-                product.Discount = request.Discount;
-                product.Status = request.Status;
-                product.ProductTypeID = request.ProductTypeID;
-                product.UpdatedAt = DateTime.Now;
-
-                _context.Product.Update(product);
-                await _context.SaveChangesAsync();
-
-                return _response.ResponseSuccess("Cập nhật sản phẩm thành công !", _productConverter.EntityProductToDTO(product));
+                img = product.Image!;
             }
-            catch (Exception e)
+            else
             {
-                return _response.ResponseError(StatusCodes.Status500InternalServerError, e.Message, null!);
+                img = await UploadAndValidateImage(request.Image!, "van-quyet-mobile/product", "product");
+                await _cloudinaryHelper.DeleteImageByUrl(product.Image!);
             }
+
+            product.Name = request.Name;
+            product.Price = request.Price;
+            product.Description = request.Description;
+            product.Image = img;
+            product.Discount = request.Discount;
+            product.Status = request.Status;
+            product.SubCategoriesID = request.SubCategoriesID;
+            product.Height = request.Height;
+            product.Width = request.Width;
+            product.Length = request.Length;
+            product.Weight = request.Weight;
+            product.Slug = InputHelper.CreateSlug(request.Name!);
+            product.UpdatedAt = DateTime.Now;
+
+            _dbContext.Product.Update(product);
+            await _dbContext.SaveChangesAsync();
+
+            return _response.ResponseSuccess("Cập nhật sản phẩm thành công !");
         }
     }
 }

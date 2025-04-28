@@ -1,4 +1,6 @@
-﻿namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs
+﻿using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
+
+namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs
 {
     public class CartItemDTO
     {

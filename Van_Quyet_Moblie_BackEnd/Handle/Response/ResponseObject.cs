@@ -17,6 +17,12 @@ namespace Van_Quyet_Moblie_BackEnd.Handle.Response
             ResponseDate = responseDate;
             Data = data;
         }
+        public ResponseObject(int status, string message, DateTime responseDate)
+        {
+            Status = status;
+            Message = message;
+            ResponseDate = responseDate;
+        }
 
         public ResponseObject<T> ResponseSuccess(string message, T data)
         {

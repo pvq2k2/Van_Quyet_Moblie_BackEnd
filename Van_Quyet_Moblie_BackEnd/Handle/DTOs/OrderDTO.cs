@@ -1,6 +1,4 @@
-﻿using Van_Quyet_Moblie_BackEnd.Entities;
-
-namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs
+﻿namespace Van_Quyet_Moblie_BackEnd.Handle.DTOs
 {
     public class OrderDTO
     {

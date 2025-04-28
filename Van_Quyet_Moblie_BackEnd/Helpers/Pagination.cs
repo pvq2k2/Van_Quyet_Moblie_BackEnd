@@ -1,4 +1,4 @@
-﻿namespace QuanLyTrungTam_API.Helper
+﻿namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
     public class Pagination
     {
@@ -9,8 +9,9 @@
             get
             {
                 if (TotalCount == 0) return 0;
-                var total = PageSize / PageNumber;
-                if (PageSize % PageNumber != 0) total++;
+                //var total = PageSize / PageNumber;
+                //if (PageSize % PageNumber != 0) total++;
+                var total = (int)Math.Ceiling((double)TotalCount / PageSize);
                 return total;
             }
         }

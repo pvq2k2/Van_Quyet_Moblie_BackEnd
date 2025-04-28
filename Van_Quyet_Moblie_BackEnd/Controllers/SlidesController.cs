@@ -1,14 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using QuanLyTrungTam_API.Helper;
+﻿using Microsoft.AspNetCore.Mvc;
+using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.SlidesRequest;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/slides")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class SlidesController : ControllerBase
     {
         private readonly ISlidesService _iSlidesService;
@@ -18,39 +16,38 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             _iSlidesService = iSlidesService;
         }
 
-        [HttpPost("GetAllSlides")]
+        [HttpPost("get-all-slides")]
         public async Task<IActionResult> GetAllSlides(Pagination pagination)
         {
             return Ok(await _iSlidesService.GetAllSlides(pagination));
         }
 
-        [HttpGet("GetActiveSlides")]
-        [AllowAnonymous]
+        [HttpGet("get-active-slides")]
         public async Task<IActionResult> GetActiveSlides()
         {
             return Ok(await _iSlidesService.GetActiveSlides());
         }
 
-        [HttpGet("GetSlidesByID")]
-        public async Task<IActionResult> GetSlidesByID(int slidesID)
+        [HttpGet("get-slides-by-id/{slidesID}")]
+        public async Task<IActionResult> GetSlidesByID([FromRoute] int slidesID)
         {
             return Ok(await _iSlidesService.GetSlidesByID(slidesID));
         }
 
-        [HttpPost("CreateSlides")]
-        public async Task<IActionResult> CreateSlides([FromForm] CreateSlidesRequest request)
+        [HttpPost("create-slides")]
+        public async Task<IActionResult> CreateSlides([FromForm] SlidesRequest request)
         {
             return Ok(await _iSlidesService.CreateSlides(request));
         }
 
-        [HttpPut("UpdateSlides")]
-        public async Task<IActionResult> UpdateSlides(int slidesID, [FromForm] UpdateSlidesRequest request)
+        [HttpPut("update-slides/{slidesID}")]
+        public async Task<IActionResult> UpdateSlides([FromRoute] int slidesID, [FromForm] SlidesRequest request)
         {
             return Ok(await _iSlidesService.UpdateSlides(slidesID, request));
         }
 
-        [HttpDelete("RemoveSlides")]
-        public async Task<IActionResult> RemoveSlides(int slidesID)
+        [HttpDelete("remove-slides/{slidesID}")]
+        public async Task<IActionResult> RemoveSlides([FromRoute] int slidesID)
         {
             return Ok(await _iSlidesService.RemoveSlides(slidesID));
         }

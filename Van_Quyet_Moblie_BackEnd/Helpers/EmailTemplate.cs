@@ -1,6 +1,4 @@
-﻿using Van_Quyet_Moblie_BackEnd.Entities;
-
-namespace Van_Quyet_Moblie_BackEnd.Helpers
+﻿namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
     public class EmailTemplate
     {
@@ -46,7 +44,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                         class=""m_-4601716730672635853mdv2rw""
                       >
                         <img
-                          src=""https://res.cloudinary.com/assignmentjs/image/upload/v1694752308/unnamed-removebg-preview_uzeord.png""
+                          src=""https://res.cloudinary.com/dbdozmkxv/image/upload/v1700127886/root/logo_vertical_sfyaha.png""
                           width=""150""
 
                           aria-hidden=""true""
@@ -135,7 +133,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
                           ""
                         >
                           <div style=""direction: ltr"">
-                            © 2023 The Pizza House,
+                            ©  <script> document.write(new Date().getFullYear() + "",""); </script> Văn Quyết Mobile,
                             <a
                               class=""m_-4601716730672635853afal""
                               style=""

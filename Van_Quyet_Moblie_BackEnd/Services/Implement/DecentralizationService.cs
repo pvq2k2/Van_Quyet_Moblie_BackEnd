@@ -1,40 +1,73 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using QuanLyTrungTam_API.Helper;
+using Van_Quyet_Moblie_BackEnd.Helpers;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Entities;
+using Van_Quyet_Moblie_BackEnd.Handle.Converter;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.DecentralizationRequest;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
+using Van_Quyet_Moblie_BackEnd.Middleware;
 
 namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 {
-    public class DecentralizationService : BaseService, IDecentralizationService
+    public class DecentralizationService : IDecentralizationService
     {
-        private readonly ResponseObject<DecentralizationDTO> _response;
-        public DecentralizationService(ResponseObject<DecentralizationDTO> response)
+        private readonly DecentralizationConverter _decentralizationConverter;
+        private readonly TokenHelper _tokenHelper;
+        private readonly AppDbContext _dbContext;
+        private readonly ResponseObject<DecentralizationDTO> _responseDecentralization;
+        private readonly Response _response;
+        public DecentralizationService(AppDbContext dbContext, ResponseObject<DecentralizationDTO> responseDecentralization, Response response, TokenHelper tokenHelper)
         {
+            _decentralizationConverter = new DecentralizationConverter();
+            _dbContext = dbContext;
+            _responseDecentralization = responseDecentralization;
             _response = response;
+            _tokenHelper = tokenHelper;
         }
-        public async Task<ResponseObject<DecentralizationDTO>> CreateDecentralization(CreateDecentralizationRequest request)
+        #region Validate
+        private async Task<Decentralization> IsDecentralizationExist(int decentralizationID)
         {
-            if (string.IsNullOrWhiteSpace(request.AuthorityName))
+            var decentralization = await _dbContext.Decentralization.FirstOrDefaultAsync(x => x.ID == decentralizationID);
+            return decentralization ?? throw new CustomException(StatusCodes.Status404NotFound, "Quyền không tồn tại !");
+        }
+        private static void ValidateDecentralization(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
             {
-                return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập đầy đủ thông tin !", null!);
+                throw new CustomException(StatusCodes.Status400BadRequest, "Tên quyền không được để trống !");
             }
+        }
+        private void IsAdmin()
+        {
+            _tokenHelper.IsToken();
+            string role = _tokenHelper.GetRole();
+            if (role != "Admin")
+            {
+                throw new CustomException(StatusCodes.Status403Forbidden, "Không có quyền !");
+            }
+        }
+        #endregion
+        public async Task<Response> CreateDecentralization(CreateDecentralizationRequest request)
+        {
+            IsAdmin();
+            ValidateDecentralization(request.Name!);
 
             var decentralization = new Decentralization { 
-                AuthorityName = request.AuthorityName,
+                Name = request.Name,
             };
 
-            await _context.Decentralization.AddAsync(decentralization);
-            await _context.SaveChangesAsync();
+            await _dbContext.Decentralization.AddAsync(decentralization);
+            await _dbContext.SaveChangesAsync();
 
-            return _response.ResponseSuccess("Thêm quyền thành công !", _decentralizationConverter.EntityDecentralizationToDTO(decentralization));
+            return _response.ResponseSuccess("Thêm quyền thành công !");
         }
 
         public async Task<PageResult<DecentralizationDTO>> GetAllDecentralization(Pagination pagination)
         {
-            var query = _context.Decentralization.OrderByDescending(x => x.ID).AsQueryable();
+            IsAdmin();
+            var query = _dbContext.Decentralization.OrderByDescending(x => x.ID).AsQueryable();
 
             var result = PageResult<Decentralization>.ToPageResult(pagination, query);
             pagination.TotalCount = await query.CountAsync();
@@ -46,50 +79,34 @@ namespace Van_Quyet_Moblie_BackEnd.Services.Implement
 
         public async Task<ResponseObject<DecentralizationDTO>> GetDecentralizationByID(int decentralizationID)
         {
-            var decentralization = await _context.Decentralization.FirstOrDefaultAsync(x => x.ID == decentralizationID);
-            if (decentralization == null)
-            {
-                return _response.ResponseError(StatusCodes.Status400BadRequest, "Quyền không tồn tại !", null!);
-            }
-
-            return _response.ResponseSuccess("Thành công !", _decentralizationConverter.EntityDecentralizationToDTO(decentralization));
+            var decentralization = await IsDecentralizationExist(decentralizationID);
+            return _responseDecentralization.ResponseSuccess("Thành công !", _decentralizationConverter.EntityDecentralizationToDTO(decentralization));
         }
 
-        public async Task<ResponseObject<string>> RemoveDecentralization(int decentralizationID)
+        public async Task<Response> RemoveDecentralization(int decentralizationID)
         {
-            var response = new ResponseObject<string>();
-            var decentralization = await _context.Decentralization.FirstOrDefaultAsync(x => x.ID == decentralizationID);
-            if (decentralization == null)
-            {
-                return response.ResponseError(StatusCodes.Status400BadRequest, "Quyền không tồn tại !", null!);
-            }
+            IsAdmin();
+            var decentralization = await IsDecentralizationExist(decentralizationID);
 
-            _context.Decentralization.Remove(decentralization);
-            await _context.SaveChangesAsync();
+            _dbContext.Decentralization.Remove(decentralization);
+            await _dbContext.SaveChangesAsync();
 
-            return response.ResponseSuccess("Xóa quyền thành công !", null!);
+            return _response.ResponseSuccess("Xóa quyền thành công !");
         }
 
-        public async Task<ResponseObject<DecentralizationDTO>> UpdateDecentralization(int decentralizationID, UpdateDecentralizationRequest request)
+        public async Task<Response> UpdateDecentralization(int decentralizationID, UpdateDecentralizationRequest request)
         {
-            var decentralization = await _context.Decentralization.FirstOrDefaultAsync(x => x.ID == decentralizationID);
-            if (decentralization == null)
-            {
-                return _response.ResponseError(StatusCodes.Status404NotFound, "Quyền không tồn tại !", null!);
-            }
+            IsAdmin();
+            ValidateDecentralization(request.Name!);
+            var decentralization = await IsDecentralizationExist(decentralizationID);
 
-            if (string.IsNullOrWhiteSpace(request.AuthorityName))
-            {
-                return _response.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng nhập đầy đủ thông tin !", null!);
-            }
-
-            decentralization.AuthorityName = request.AuthorityName;
+            decentralization.Name = request.Name;
             decentralization.UpdatedAt = DateTime.Now;
 
-            _context.Decentralization.Update(decentralization);
-            await _context.SaveChangesAsync();
+            _dbContext.Decentralization.Update(decentralization);
+            await _dbContext.SaveChangesAsync();
 
-            return _response.ResponseSuccess("Cập nhật quyền thành công !", _decentralizationConverter.EntityDecentralizationToDTO(decentralization));
+            return _response.ResponseSuccess("Cập nhật quyền thành công !");
         }
     }
 }

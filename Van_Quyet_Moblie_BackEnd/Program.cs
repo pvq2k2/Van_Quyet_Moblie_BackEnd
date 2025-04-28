@@ -1,12 +1,24 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using System.Text.Json.Serialization;
+using Van_Quyet_Moblie_BackEnd.DataContext;
 using Van_Quyet_Moblie_BackEnd.Handle.DTOs;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Auth;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Categories;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductAttribute;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductImage;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.ProductReview;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Products;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.Slides;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.SubCategories;
+using Van_Quyet_Moblie_BackEnd.Handle.DTOs.User;
 using Van_Quyet_Moblie_BackEnd.Handle.Response;
 using Van_Quyet_Moblie_BackEnd.Helpers;
+using Van_Quyet_Moblie_BackEnd.Middleware;
 using Van_Quyet_Moblie_BackEnd.Services.Implement;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
@@ -42,10 +54,10 @@ builder.Services.AddCors(options =>
                           policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                       });
 });
-//builder.Services.AddDbContext<AppDbContext>(options =>
-//{
-//    options.UseSqlServer(builder.Configuration.GetSection("AppSettings:MyDB").Value);
-//});
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetSection("AppSettings:MyDB").Value);
+});
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -60,10 +72,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddTransient<IAuthService, AuthService>();
-builder.Services.AddTransient<IProductTypeService, ProductTypeService>();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<ICategoriesService, CategoriesService>();
+builder.Services.AddTransient<ISubCategoriesService, SubCategoriesService>();
+builder.Services.AddTransient<IColorService, ColorService>();
+builder.Services.AddTransient<ISizeService, SizeService>();
 builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddTransient<IDecentralizationService, DecentralizationService>();
 builder.Services.AddTransient<IProductImageService, ProductImageService>();
+builder.Services.AddTransient<IProductAttributeService, ProductAttributeService>();
 builder.Services.AddTransient<IProductReviewService, ProductReviewService>();
 builder.Services.AddTransient<ICartService, CartService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
@@ -73,11 +90,20 @@ builder.Services.AddTransient<TokenHelper>();
 builder.Services.AddTransient<GHNHelper>();
 
 
-builder.Services.AddSingleton<ResponseObject<AccountDTO>>();
+builder.Services.AddSingleton<Response>();
+builder.Services.AddSingleton<ResponseObject<CategoriesDTO>>();
+builder.Services.AddSingleton<ResponseObject<ColorDTO>>();
+builder.Services.AddSingleton<ResponseObject<SizeDTO>>();
+builder.Services.AddSingleton<ResponseObject<SubCategoriesDTO>>();
+builder.Services.AddSingleton<ResponseObject<AuthDTO>>();
 builder.Services.AddSingleton<ResponseObject<TokenDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductImageDTO>>();
-builder.Services.AddSingleton<ResponseObject<ProductTypeDTO>>();
+builder.Services.AddSingleton<ResponseObject<GetUpdateProductImageDTO>>();
+builder.Services.AddSingleton<ResponseObject<GetUpdateUserDTO>>();
+builder.Services.AddSingleton<ResponseObject<ProductAttributeDTO>>();
+builder.Services.AddSingleton<ResponseObject<GetUpdateProductAttributeDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductDTO>>();
+builder.Services.AddSingleton<ResponseObject<GetUpdateProductDTO>>();
 builder.Services.AddSingleton<ResponseObject<ProductReviewDTO>>();
 builder.Services.AddSingleton<ResponseObject<DecentralizationDTO>>();
 builder.Services.AddSingleton<ResponseObject<CartDTO>>();
@@ -103,6 +129,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(MyAllowSpecificOrigins);
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

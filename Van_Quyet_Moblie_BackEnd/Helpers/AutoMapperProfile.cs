@@ -7,7 +7,7 @@ namespace Van_Quyet_Moblie_BackEnd.Helpers
     public class AutoMapperProfile : Profile
     {
         public AutoMapperProfile() { 
-            CreateMap<Account, AccountDTO>();
+            //CreateMap<Account, AccountDTO>();
         }
     }
 }

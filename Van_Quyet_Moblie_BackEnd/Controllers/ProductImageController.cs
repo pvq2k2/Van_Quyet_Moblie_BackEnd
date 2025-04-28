@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using QuanLyTrungTam_API.Helper;
+﻿using Microsoft.AspNetCore.Mvc;
+using Van_Quyet_Moblie_BackEnd.Helpers;
 using Van_Quyet_Moblie_BackEnd.Handle.Request.ProductImageRequest;
 using Van_Quyet_Moblie_BackEnd.Services.Interface;
 
 namespace Van_Quyet_Moblie_BackEnd.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/product-image")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class ProductImageController : ControllerBase
     {
         private readonly IProductImageService _iProductImageService;
@@ -19,32 +16,38 @@ namespace Van_Quyet_Moblie_BackEnd.Controllers
             _iProductImageService = iProductImageService;
         }
 
-        [HttpPost("GetAllProductImage")]
-        public async Task<IActionResult> GetAllProductImage(Pagination pagination)
+        [HttpPost("get-all-product-image/{productID}")]
+        public async Task<IActionResult> GetAllProductImage(Pagination pagination, [FromRoute] int productID)
         {
-            return Ok(await _iProductImageService.GetAllProductImage(pagination));
+            return Ok(await _iProductImageService.GetAllProductImage(pagination, productID));
         }
 
-        [HttpGet("GetProductImageByID")]
-        public async Task<IActionResult> GetProductImageByID(int productID)
+        [HttpGet("get-product-image-by-id/{productImageID}")]
+        public async Task<IActionResult> GetProductImageByID([FromRoute] int productImageID)
         {
-            return Ok(await _iProductImageService.GetProductImageByID(productID));
+            return Ok(await _iProductImageService.GetProductImageByID(productImageID));
         }
 
-        [HttpPost("CreateProductImage")]
+        [HttpGet("get-update-product-image-by-id/{productImageID}")]
+        public async Task<IActionResult> GetUpdateProductImageByID([FromRoute] int productImageID)
+        {
+            return Ok(await _iProductImageService.GetUpdateProductImageByID(productImageID));
+        }
+
+        [HttpPost("create-product-image")]
         public async Task<IActionResult> CreateProductImage([FromForm] CreateProductImageRequest request)
         {
             return Ok(await _iProductImageService.CreateProductImage(request));
         }
 
-        [HttpPut("UpdateProductImage")]
-        public async Task<IActionResult> UpdateProductImage(int productImageID, [FromForm] UpdateProductImageRequest request)
+        [HttpPut("update-product-image/{productImageID}")]
+        public async Task<IActionResult> UpdateProductImage([FromRoute] int productImageID, [FromForm] UpdateProductImageRequest request)
         {
             return Ok(await _iProductImageService.UpdateProductImage(productImageID, request));
         }
 
-        [HttpDelete("RemoveProductImage")]
-        public async Task<IActionResult> RemoveProductImage(int productImageID)
+        [HttpDelete("remove-product-image/{productImageID}")]
+        public async Task<IActionResult> RemoveProductImage([FromRoute] int productImageID)
         {
             return Ok(await _iProductImageService.RemoveProductImage(productImageID));
         }

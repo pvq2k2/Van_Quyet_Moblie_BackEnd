@@ -1,7 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
-
-namespace Van_Quyet_Moblie_BackEnd.Helpers
+﻿namespace Van_Quyet_Moblie_BackEnd.Helpers
 {
     public class GHNHelper
     {
