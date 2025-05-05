@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData.Peek("SuccessMessage")
+    </div>
+    @TempData.Remove("SuccessMessage")
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData.Peek("ErrorMessage")
+    </div>
+    TempData.Remove("ErrorMessage");
+}
+
+<h1 class="mb-3">Login</h1>
+
+<form method="post" id="formAuth">
+    <div class="mb-3 form-group">
+        <label for="email" class="form-label">Email address</label>
+        <input type="email" class="form-control" name="email" id="email" aria-describedby="emailHelp" required>
+        <div class="error-message invalid-feedback"></div>
+    </div>
+    <div class="mb-3 form-group">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" id="password" required>
+        <div class="error-message invalid-feedback"></div>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
